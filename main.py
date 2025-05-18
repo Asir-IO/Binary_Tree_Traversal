@@ -22,16 +22,5 @@ class RecursiveTreeStructure(Scene):
         tree.scale(0.6)
         tree.move_to([-(6.5+0.125), -(1+0.125), 0], aligned_edge=DL)
 
-        tree.lines[0].z_index = 0
-        tree.dots[0].z_index = 3
-        self.play(Create(tree.lines[0]), run_time=1)
-        self.wait(0.5)
-        self.play(FadeIn(tree.dots[0]), run_time=1)
-        self.wait(0.5)
-
-        for i, (dt, ln, tg) in enumerate(zip(tree.dots[1:], tree.lines[1:], tree.tags)):
-            self.play(Create(ln), run_time=1)
-            self.wait(0.5)
-            self.play(FadeIn(tg), run_time=1)
-            self.wait(0.5) 
+        tree.display(self)
         self.wait()

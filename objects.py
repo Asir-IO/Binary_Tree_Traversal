@@ -147,3 +147,28 @@ class TraversalTree(VGroup):
                 self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[1])
         self.x += self.x_distance
         self.y -= self.y_distance
+    def display(self, scene):
+        # Animate the first dot and line
+        self.lines[0].z_index = 0
+        self.dots[0].z_index = 3
+        scene.play(FadeIn(self.dots[0]), run_time=1)
+        scene.wait(0.1)
+        scene.play(Create(self.lines[0]), run_time=1)
+        scene.bring_to_front(self.dots[0])
+        scene.wait(0.5)
+
+        # Animate tags and lines for the rest
+        for i, (ln, tg) in enumerate(zip(self.lines[1:], self.tags)):
+            ln.z_index = 0
+            tg.z_index = 3
+            scene.play(FadeIn(tg), run_time=1)
+            scene.wait(0.1)
+            scene.play(Create(ln), run_time=1)
+            scene.bring_to_front(tg)
+            scene.wait(0.5)
+
+        # Animate the final dot
+        self.dots[-1].z_index = 3
+        scene.play(FadeIn(self.dots[-1]), run_time=1)
+        scene.bring_to_front(self.dots[-1])
+        scene.wait(0.5)
