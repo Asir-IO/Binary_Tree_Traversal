@@ -14,7 +14,6 @@ class RecursiveTreeStructure(Scene):
         tree.scale_all(0.7)
         self.add(tree)
         self.wait()
-        self.remove(tree.entry_dot, tree.entry_line, tree.exit_dot, tree.exit_line)
 
         BTree1 = BTree(root=buildTree(dots_color, 3), x_start=0, x_distance=3, y_start=3 ,y_distance=1, dots_color=dots_color, lines_color=lines_color)
         BTree1.build_structure(BTree1.root)
