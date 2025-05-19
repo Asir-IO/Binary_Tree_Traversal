@@ -181,12 +181,15 @@ class BTree(VGroup):
         self.x_distance = x_distance
         self.y = y_start
         self.y_distance = y_distance
-        self.dots = VGroup()
-        self.lines = VGroup()
+        self.Ls = VGroup()
         self.tags = VGroup()
+        self.entry_dot = Dot(color=RED, radius=0.25).move_to([self.x, self.y, 0])
+        self.entry_line = Line([self.x, self.y, 0], [self.x, self.y - self.y_distance, 0], stroke_width=7, color=YELLOW)
+        self.y -= self.y_distance
         self.dots_color = dots_color
         self.lines_color = lines_color
-        self.add(self.dots, self.lines, self.tags)
+        self.add(self.Ls, self.tags, self.entry_dot, self.entry_line)
+        self.entry_line.z_index = -100
 
     def draw_dot(self, color=WHITE):
         dot = Dot(color=color, radius=0.25).move_to([self.x, self.y, 0])
@@ -202,75 +205,47 @@ class BTree(VGroup):
     def add_number_tag(self, number, color):
         tag = NumberTag(number=number, fill_color=color, radius=0.3)
         tag.move_to([self.x, self.y, 0])
-        tag.scale(0.85)
         self.tags.add(tag)
+    
+    def draw_L(self, start, end, dashed, color=WHITE):
+        if dashed:
+            L = VGroup(
+                DashedLine([start[0], start[1], 0], [end[0], start[1], 0], dash_length=0.3, dashed_ratio=0.7, stroke_width=7, color=color),
+                DashedLine([end[0], start[1], 0], [end[0], end[1], 0], dash_length=0.3, dashed_ratio=0.7, stroke_width=7, color=color)
+            )
+        else:
+            L = VGroup(
+                Line([start[0], start[1], 0], [end[0], start[1], 0], stroke_width=7, color=color),
+                Line([end[0], start[1], 0], [end[0], end[1], 0], stroke_width=7, color=color)
+            )
+        self.Ls.add(L)
 
     def build_structure(self, node, child_side=None, level=0):
         if node is None:
-            self.draw_dot(self.dots_color[-1])
-            self.add_number_tag(None, self.dots_color[-1])
-
-            offset = self.x_distance / (2 ** level)
             if child_side == "left":
-                self.draw_line([self.x + 2*offset, self.y + self.y_distance, 0],
-                            [self.x, self.y + self.y_distance, 0], False, color=self.lines_color[2])
-                self.draw_line([self.x, self.y + self.y_distance, 0],
-                            [self.x, self.y, 0], False, color=self.lines_color[2])
-                self.x += offset
-                self.y += self.y_distance
-
+                self.draw_L([self.x + self.x_distance/4, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[2])
             elif child_side == "right":
-                self.draw_line([self.x - 2*offset, self.y + self.y_distance, 0],
-                        [self.x, self.y + self.y_distance, 0], False, color=self.lines_color[1])
-                self.draw_line([self.x, self.y + self.y_distance, 0],
-                            [self.x, self.y, 0], False, color=self.lines_color[1])
-                self.x -= offset
-                self.y += self.y_distance
+                self.draw_L([self.x - self.x_distance/4, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[1])
+            self.add_number_tag(None, self.dots_color[-1])
             return
-
-        # Preorder
-        offset = self.x_distance / (2 ** level)
-
-        # Draw L-shaped link if not the root
-        if child_side == "left":
-            self.draw_line([self.x + 2*offset, self.y + self.y_distance, 0],
-                        [self.x, self.y + self.y_distance, 0], False, color=self.lines_color[2])
-            self.draw_line([self.x, self.y + self.y_distance, 0],
-                        [self.x, self.y, 0], False, color=self.lines_color[2])
-        elif child_side == "right":
-            self.draw_line([self.x - 2*offset, self.y + self.y_distance, 0],
-                        [self.x, self.y + self.y_distance, 0], False, color=self.lines_color[1])
-            self.draw_line([self.x, self.y + self.y_distance, 0],
-                        [self.x, self.y, 0], False, color=self.lines_color[1])
-        elif child_side is None:
-            # Draw root's vertical line
-            self.draw_line([self.x, self.y + self.y_distance, 0],
-                        [self.x, self.y, 0], False, color=self.lines_color[0])
-            self.y += self.y_distance
-            self.draw_dot(self.dots_color[0])
-            self.y -= self.y_distance
-
-        self.draw_dot(node.color)
-        self.add_number_tag(node.val, node.color)
-        print("Node:", node.val, "X:", self.x, "Y:", self.y)
-
-        # Save current position
+        # Pre-order
+        offset = self.x_distance/(2**level)        
         original_x, original_y = self.x, self.y
-
-        # Move to left child
+        if node.left:
+            self.draw_L([self.x, self.y, 0], [self.x-offset, self.y-self.y_distance, 0], False, color=self.lines_color[2])
+        self.add_number_tag(node.val, node.color)
         self.x -= offset
         self.y -= self.y_distance
         self.build_structure(node.left, "left", level + 1)
 
         # Inorder
-        # Restore position
+        offset = self.x_distance / (2 ** level)
         self.x, self.y = original_x, original_y
-
-        # Move to right child
+        if node.right:
+            self.draw_L([self.x, self.y, 0], [self.x+offset, self.y-self.y_distance, 0], False, color=self.lines_color[1])
+        
         self.x += offset
         self.y -= self.y_distance
         self.build_structure(node.right, "right", level + 1)
-
         # Postorder
-        # Restore again
         self.x, self.y = original_x, original_y
