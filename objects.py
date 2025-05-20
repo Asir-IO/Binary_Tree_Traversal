@@ -74,7 +74,7 @@ class NumberTag(VGroup):
         self.label = label
 
 
-class TraversalTree(VGroup):
+class LinearizedBTree(VGroup):
     def __init__(self, root, x_start=-4, x_distance=0.5, y_start=-2, y_distance=1.5, dots_color=[RED, GREY, ManimColor("#228be6"), ManimColor("#2f9e44")], lines_color=[YELLOW, ORANGE, PURPLE], **kwargs):
         super().__init__(**kwargs)
         self.root = root
@@ -180,21 +180,14 @@ class TraversalTree(VGroup):
         scene.wait(0.5)
 
     def scale_all(self, scale_factor):
-        for line in self.lines:
-            line.stroke_width *= scale_factor
-            if isinstance(line, DashedLine):
-                line.dash_length *= scale_factor
-                line.dashed_ratio *= scale_factor
         for tag in self.tags:
             tag.circle.stroke_width *= scale_factor
             tag.outline.stroke_width *= scale_factor
             tag.label.font_size *= (scale_factor*1.5)
-        self.entry_line.stroke_width *= scale_factor
-        self.exit_line.stroke_width *= scale_factor
         self.scale(scale_factor)
 
 
-class BTree(VGroup):
+class BinaryTree(VGroup):
     def __init__(self, root, x_start=0, x_distance=1, y_start=3, y_distance=1/3, dots_color=[RED, GREY, ManimColor("#228be6"), ManimColor("#2f9e44")], lines_color=[YELLOW, ORANGE, PURPLE], **kwargs):
         super().__init__(**kwargs)
         self.root = root
@@ -203,13 +196,15 @@ class BTree(VGroup):
         self.y = y_start
         self.y_distance = y_distance
         self.Ls = VGroup()
+        self.Double_Ls = VGroup()
+        self.Double_tags = VGroup()
         self.tags = VGroup()
         self.entry_dot = Dot(color=RED, radius=0.25).move_to([self.x, self.y, 0])
         self.entry_line = Line([self.x, self.y, 0], [self.x, self.y - self.y_distance, 0], stroke_width=7, color=YELLOW)
         self.y -= self.y_distance
         self.dots_color = dots_color
         self.lines_color = lines_color
-        self.add(self.Ls, self.tags, self.entry_dot, self.entry_line)
+        self.add(self.Ls, self.tags, self.entry_dot, self.entry_line, self.Double_Ls)
         self.entry_line.z_index = -100
 
     def draw_dot(self, color=WHITE):
@@ -228,32 +223,47 @@ class BTree(VGroup):
         tag.move_to([self.x, self.y, 0])
         self.tags.add(tag)
     
-    def draw_L(self, start, end, dashed, color=WHITE):
-        if dashed:
-            L = VGroup(
-                DashedLine([start[0], start[1], 0], [end[0], start[1], 0], dash_length=0.3, dashed_ratio=0.7, stroke_width=7, color=color),
-                DashedLine([end[0], start[1], 0], [end[0], end[1], 0], dash_length=0.3, dashed_ratio=0.7, stroke_width=7, color=color)
-            )
+    def draw_L(self, start, end, dashed, color=WHITE, x_first=True):
+        if x_first:
+            if dashed:
+                L = VGroup(
+                    DashedLine([start[0], start[1], 0], [end[0], start[1], 0], dash_length=0.3, dashed_ratio=0.7, stroke_width=7, color=color),
+                    DashedLine([end[0], start[1], 0], [end[0], end[1], 0], dash_length=0.3, dashed_ratio=0.7, stroke_width=7, color=color)
+                )
+            else:
+                L = VGroup(
+                    Line([start[0], start[1], 0], [end[0], start[1], 0], stroke_width=7, color=color),
+                    Line([end[0], start[1], 0], [end[0], end[1], 0], stroke_width=7, color=color)
+                )
         else:
-            L = VGroup(
-                Line([start[0], start[1], 0], [end[0], start[1], 0], stroke_width=7, color=color),
-                Line([end[0], start[1], 0], [end[0], end[1], 0], stroke_width=7, color=color)
-            )
-        self.Ls.add(L)
+            if dashed:
+                L = VGroup(
+                    DashedLine([start[0], start[1], 0], [start[0], end[1], 0], dash_length=0.3, dashed_ratio=0.7, stroke_width=7, color=color),
+                    DashedLine([start[0], end[1], 0], [end[0], end[1], 0], dash_length=0.3, dashed_ratio=0.7, stroke_width=7, color=color)
+                )
+            else:
+                L = VGroup(
+                    Line([start[0], start[1], 0], [start[0], end[1], 0], stroke_width=7, color=color),
+                    Line([start[0], end[1], 0], [end[0], end[1], 0], stroke_width=7, color=color)
+                )
+        return L
 
     def build_structure(self, node, child_side=None, level=0):
         if node is None:
             if child_side == "left":
-                self.draw_L([self.x + self.x_distance/4, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[2])
+                L = self.draw_L([self.x + self.x_distance/2, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[2], x_first=True)
+                self.Ls.add(L)
             elif child_side == "right":
-                self.draw_L([self.x - self.x_distance/4, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[1])
+                L = self.draw_L([self.x - self.x_distance/2, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[1], x_first=True)
+                self.Ls.add(L)
             self.add_number_tag(None, self.dots_color[-1])
             return
         # Pre-order
         offset = self.x_distance/(2**level)        
         original_x, original_y = self.x, self.y
         if node.left:
-            self.draw_L([self.x, self.y, 0], [self.x-offset, self.y-self.y_distance, 0], False, color=self.lines_color[2])
+            L = self.draw_L([self.x, self.y, 0], [self.x - offset, self.y - self.y_distance, 0], False, color=self.lines_color[2])
+            self.Ls.add(L)
         self.add_number_tag(node.val, node.color)
         self.x -= offset
         self.y -= self.y_distance
@@ -263,22 +273,17 @@ class BTree(VGroup):
         offset = self.x_distance / (2 ** level)
         self.x, self.y = original_x, original_y
         if node.right:
-            self.draw_L([self.x, self.y, 0], [self.x+offset, self.y-self.y_distance, 0], False, color=self.lines_color[1])
-        
+            L = self.draw_L([self.x, self.y, 0], [self.x + offset, self.y - self.y_distance, 0], False, color=self.lines_color[1])
+            self.Ls.add(L)
         self.x += offset
         self.y -= self.y_distance
         self.build_structure(node.right, "right", level + 1)
         # Postorder
         self.x, self.y = original_x, original_y
     def scale_all(self, scale_factor):
-        for line in self.Ls:
-            line.stroke_width *= scale_factor
-            if isinstance(line, DashedLine):
-                line.dash_length *= scale_factor
-                line.dashed_ratio *= scale_factor
         for tag in self.tags:
             tag.circle.stroke_width *= scale_factor
             tag.outline.stroke_width *= scale_factor
             tag.label.font_size *= (scale_factor*2)
-        self.entry_line.stroke_width *= scale_factor
         self.scale(scale_factor)
+    
