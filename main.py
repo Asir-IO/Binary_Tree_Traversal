@@ -54,8 +54,8 @@ class RecursiveTreeStructure(Scene):
         self.add(timeline)
         for tick in timeline.ticks:
             tick.set_color(YELLOW)
-        # trace_dot_LBTree = Dot(color=YELLOW, radius=0.1).align_to(LBTree,DL)
-        # trace_dot_BTree = Dot(color=YELLOW, radius=0.1).move_to(BTree.entry_dot.get_center())
+        trace_dot_LBTree = Dot(color=YELLOW, radius=0.1).align_to(LBTree,DL)
+        trace_dot_BTree = Dot(color=YELLOW, radius=0.1).move_to(BTree.entry_dot.get_center())
 
         
         # for i, (LBtag, line, Btag, L, tick) in enumerate(zip(LBTree.tags, LBTree.lines, BTree.tags, BTree.Double_Ls, timeline.ticks)):
@@ -100,6 +100,76 @@ class RecursiveTreeStructure(Scene):
         #     self.wait(0.2)
 
         # self.wait(2)
+        
+        def Trace(self, LBTree, BTree, node=BTree.root, i=0, child_side=None):
+            if not node:
+                return
+            if child_side == None:
+                line = LBTree.entry_line
+                L = BTree.entry_line
+                LBTag = LBTree.tags[0]
+                BTag = BTree.tags[0]
+                BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L)
+                LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
+                self.play(AnimationGroup(BTreeDotAni1, LBTreeDotAni), run_time=2)
+                self.play(Indicate(LBTag, color=YELLOW), run_time=2)
+                self.play(Indicate(BTag, color=YELLOW), run_time=2)
+                self.wait(0.2)
+
+                line = LBTree.lines[0]
+                L = BTree.Ls[0]
+                LBTag = LBTree.tags[1]
+                BTag = BTree.tags[1]
+                BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L[0])
+                BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, L[1])
+                LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
+                self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
+                self.play(Indicate(LBTag, color=YELLOW), run_time=2)
+                self.play(Indicate(BTag, color=YELLOW), run_time=2)
+                self.wait(0.2)
+                self.Trace(LBTree, BTree, node.left, i+1, 'left')
+            else:
+                # Preorder
+                line = LBTree.lines[i]
+                L = BTree.Ls[i]
+                LBTag = LBTree.tags[i+1]
+                BTag = BTree.tags[i+1]
+                BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L[0])
+                BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, L[1])
+                LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
+                self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
+                self.play(Indicate(LBTag, color=YELLOW), run_time=2)
+                self.play(Indicate(BTag, color=YELLOW), run_time=2)
+                self.wait(0.2)
+                self.Trace(LBTree, BTree, node.left, i+1, 'left')
+
+                # Inorder
+                if node.left:
+                    line = LBTree.lines[i]
+                    LBTag = LBTree.tags[i+1]
+                    BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L[1])
+                    BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, L[0])
+                    LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
+                    self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
+                    self.play(Indicate(LBTag, color=YELLOW), run_time=2)
+                    self.play(Indicate(BTag, color=YELLOW), run_time=2)
+                    self.wait(0.2)
+                self.Trace(LBTree, BTree, node.right, i+1, 'right')
+                # postorder
+                if node.right:
+                    line = LBTree.lines[i]
+                    LBTag = LBTree.tags[i+1]
+                    BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L[1])
+                    BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, L[0])
+                    LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
+                    self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
+                    self.play(Indicate(LBTag, color=YELLOW), run_time=2)
+                    self.play(Indicate(BTag, color=YELLOW), run_time=2)
+                    self.wait(0.2)
+        Trace(self, LBTree, BTree, node=BTree.root, i=0, child_side=None)
+
+
+            
 
         
 
