@@ -72,6 +72,7 @@ class NumberTag(VGroup):
         self.circle = circle
         self.outline = outline
         self.label = label
+        self.radius = radius
 
 
 class LinearizedBTree(VGroup):
@@ -311,3 +312,54 @@ class BinaryTree(VGroup):
             tag.outline.radius *= scale_factor
             tag.label.font_size *= (scale_factor*2)
         self.scale(scale_factor)
+
+class NodeCode(VGroup):
+    def __init__(self, node,**kwargs):
+        super().__init__(**kwargs)
+        code = '''
+                def traversal(node):
+                    # Base case
+                    if node == None:
+                        return
+                    # Preorder (1st visit)
+                    visit(node)
+                    traversal(node.left)
+
+                    # Inorder (2nd visit)
+                    visit(node)
+                    traversal(node.right)
+                    
+                    # Postorder (3rd visit)
+                    visit(node)
+                    return'''
+        code_block = Code(
+            code_string=code,
+            language="python",
+            background="window",
+            formatter_style="native",
+            paragraph_config={"font": "Cascadia Mono SemiBold"},
+        )
+        code_block.move_to([4.5, 1.5, 0])
+        code_block.height *= 0.5
+        code_block.width*= 1
+        header_text = Tex("node = ", font_size=20*node.radius/0.15)
+        node.next_to(header_text, RIGHT)
+        header = VGroup(header_text, node)
+        header.next_to(code_block, UP, buff=0.2)
+        self.code=code
+        self.code_block = code_block
+        self.node=node
+        self.type=type
+        self.add(code_block, header)
+    
+    def to_be_displayed(self, type="preorder"):
+        if type == "preorder":
+            return self.code_block.code_lines[5:7]
+        elif type == "inorder":
+            return self.code_block.code_lines[9:11]
+        elif type == "postorder":
+            return self.code_block.code_lines[13:15]
+        elif type == "base":
+            return self.code_block.code_lines[2:4]
+        return
+

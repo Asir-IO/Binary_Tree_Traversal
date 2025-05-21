@@ -8,9 +8,9 @@ lines_color = [YELLOW, ORANGE, PURPLE]
 
 class RecursiveTreeStructure(Scene):
     def construct(self):
-        self.add(NumberPlane())
-        self.add(Rectangle(width=9, height=4, color= RED, fill_opacity=0).set_stroke(color=RED, width=4).move_to([-2.5, 1, 0]))
-        self.add(Rectangle(width=5, height=3, color= GREEN, fill_opacity=0).set_stroke(color=GREEN, width=4).move_to([4.5, -2.5,0]))
+        # self.add(NumberPlane())
+        # self.add(Rectangle(width=9, height=4, color= RED, fill_opacity=0).set_stroke(color=RED, width=4).move_to([-2.5, 1, 0]))
+        # self.add(Rectangle(width=5, height=3, color= GREEN, fill_opacity=0).set_stroke(color=GREEN, width=4).move_to([4.5, -2.5,0]))
         LBTree = LinearizedBTree(root=buildTree(dots_color, 3), x_start=-10, x_distance=0.9, y_start=-2 ,y_distance=1.5, dots_color=dots_color, lines_color=lines_color)
         LBTree.build_structure_with_entry(LBTree.root)
         LBTree.move_to([-2.5, 1, 0])
@@ -44,45 +44,7 @@ class RecursiveTreeStructure(Scene):
         self.trace_circle_BTree = Circle(color=YELLOW, radius=BTree.tags[0].outline.radius+0.07).move_to(BTree.entry_dot.get_center())
         print("Radius:", BTree.tags[0].outline.radius)
 
-        LBtags_seen = {}
-        for i, (LBtag, line, Btag, tick) in enumerate(zip(LBTree.tags, LBTree.lines, BTree.Double_tags, timeline.ticks)):
-            count = LBtags_seen.get(LBtag.number, 0) + 1
-            LBtags_seen[LBtag.number] = count
-
-            if not isinstance(line, DashedLine):
-                line = Line(line.get_start(), line.get_end())
-            LBTreeDotAni = MoveAlongPath(self.trace_dot_LBTree, line)
-            BTreeCircleAni = self.trace_circle_BTree.animate.move_to(Btag.get_center())
-
-            LBtag_copy = LBtag.copy()
-            LBtag_copy.generate_target()
-            LBtag_copy.target.move_to(tick.get_center())
-            LBTreeTagAni = MoveToTarget(LBtag_copy)
-            if count == 1:
-                indication_color =  ManimColor("#74D479")
-            elif count == 2:
-                indication_color = ManimColor("#FFC940")
-            elif count == 3:
-                indication_color = ManimColor("#FF3264")
-            if not LBtag.number:
-                indication_color = ManimColor("#74D479")
-
-            arrow = Arrow(start=tick.get_bottom() + DOWN*1, end= tick.get_bottom(), color = indication_color, stroke_width=2,buff=0.1, max_stroke_width_to_length_ratio=1)
-
-            # Run LBTreeDotAni and BTreeCircleAni in parallel, then LBTreeTagAni
-            LBtag.z_index = self.trace_dot_LBTree.z_index + 1
-            self.play(
-                Succession(
-                    AnimationGroup(BTreeCircleAni, LBTreeDotAni, lag_ratio=0, run_time=2),
-                    Indicate(LBtag, color=indication_color),
-                    LBTreeTagAni,
-                    GrowArrow(arrow)
-                ),
-                run_time=4
-            )
-            self.wait(0.2)
-        self.wait(2)
-
-    
+        traversal_scene_data = traversal_scene(self, LBTree, BTree, timeline)
+        show_order_scene(self, traversal_scene_data[0], traversal_scene_data[1], timeline)
 
 

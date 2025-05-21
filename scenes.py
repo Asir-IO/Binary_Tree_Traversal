@@ -2,127 +2,119 @@ from manim import *
 from objects import *
 from processing import *
 
-# def animate_L_and_tags(self, L, line, LBTag, BTag, forward=True):
-#     if isinstance(L, Line):
-#         start = L.get_start()
-#         end = L.get_end()
-#         mid = (start + end) / 2
-#         L1 = Line(start, mid)
-#         L2 = Line(mid, end)
-#         L = [L1, L2] 
-#     if forward:
+def traversal_scene(self, LBTree, BTree, timeline):
+    LBtags_seen = {}
+    Linearized_tags = VGroup()
+    Arrows = VGroup()
+    for i, (LBtag, line, Btag, tick) in enumerate(zip(LBTree.tags, LBTree.lines, BTree.Double_tags, timeline.ticks)):
+        count = LBtags_seen.get(LBtag.number, 0) + 1
+        LBtags_seen[LBtag.number] = count
+
+        if not isinstance(line, DashedLine):
+            line = Line(line.get_start(), line.get_end())
+        LBTreeDotAni = MoveAlongPath(self.trace_dot_LBTree, line)
+        BTreeCircleAni = self.trace_circle_BTree.animate.move_to(Btag.get_center())
+
+        LBtag_copy = LBtag.copy()
+        LBtag_copy.order = count
+        Linearized_tags.add(LBtag_copy)
+        LBtag_copy.generate_target()
+        LBtag_copy.target.move_to(tick.get_center())
+        LBTreeTagAni = MoveToTarget(LBtag_copy)
+
+        node_code = NodeCode(LBtag.copy())
+        if count == 1:
+            indication_color =  BLUE_C
+            indicated_lines = node_code.to_be_displayed("preorder")
+        elif count == 2:
+            indication_color = YELLOW_D
+            indicated_lines = node_code.to_be_displayed("inorder")
+            if LBtag.number:
+                for ln in node_code.to_be_displayed("preorder"):
+                    ln.set_color(BLUE_C)
+        elif count == 3:
+            indication_color = RED_D
+            indicated_lines = node_code.to_be_displayed("postorder")
+            if LBtag.number:
+                for ln in node_code.to_be_displayed("preorder"):
+                    ln.set_color(BLUE_C)
+                for ln in node_code.to_be_displayed("inorder"):
+                    ln.set_color(YELLOW_D)
+        if not LBtag.number:
+            indication_color = BLUE_C
+            indicated_lines = node_code.to_be_displayed("base")
+
+        # FadeIn the code_block
+        self.play(FadeIn(node_code))
+        self.wait()
         
-#         BTreeDotAni1 = MoveAlongPath(self.trace_dot_BTree, L[0])
-#         BTreeDotAni2 = MoveAlongPath(self.trace_dot_BTree, L[1])
-#         LBTreeDotAni = MoveAlongPath(self.trace_dot_LBTree, line)
-#     else:
-#         BTreeDotAni1 = MoveAlongPath(self.trace_dot_BTree, L[1].put_start_and_end_on(L[1].get_end(), L[1].get_start()))
-#         BTreeDotAni2 = MoveAlongPath(self.trace_dot_BTree, L[0].put_start_and_end_on(L[0].get_end(), L[0].get_start()))
-#         LBTreeDotAni = MoveAlongPath(self.trace_dot_LBTree, line)
-#     self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
-#     self.play(Indicate(LBTag, color=YELLOW), run_time=2)
-#     self.play(Indicate(BTag, color=YELLOW), run_time=2)
-#     self.wait(0.2)
+        arrow = Arrow(start=tick.get_bottom() + DOWN*1, end= tick.get_bottom() + DOWN*0.2, color = indication_color, stroke_width=12, buff=0, max_stroke_width_to_length_ratio=10)
+        Arrows.add(arrow)
+        arrow.order = count
 
-def indicate_tags(self, LBTag, BTag):
-    self.play(Indicate(LBTag, color=YELLOW), run_time=2)
-    self.play(Indicate(BTag, color=YELLOW), run_time=2)
-    self.wait(0.2)
+        LBtag.z_index = max(self.trace_dot_LBTree.z_index, LBtag_copy.z_index) + 1
+        LBTree.entry_dot.z_index = self.trace_dot_LBTree.z_index + 1
+        # Move circle and dot, and then indicate tag, and then linearize tag, and then add arrow
+        temp_copy = LBtag.outline.copy()
+        temp_copy.z_index=LBtag.z_index+1
+        temp_copy.set_fill(opacity=0)
+        self.play(Succession(AnimationGroup(BTreeCircleAni, LBTreeDotAni, lag_ratio=0, run_time=2), temp_copy.animate.set_stroke(color=YELLOW)))
+        self.wait()
+        self.play(Succession(AnimationGroup(Indicate(LBtag, color=indication_color), Succession(Indicate(indicated_lines[0], color=indication_color), indicated_lines[0].animate.set_color(indication_color)))))
+        self.wait()
+        self.play(LBTreeTagAni)
+        self.wait()
+        self.play(GrowArrow(arrow))
+        self.wait(2)
+        self.play(Succession(Indicate(indicated_lines[1], color=indication_color), indicated_lines[1].animate.set_color(indication_color)))
+        self.wait()
+        self.play(FadeOut(node_code), FadeOut(temp_copy))
+        self.wait()
+    self.play(FadeOut(self.trace_circle_BTree, self.trace_dot_LBTree))
+    return VGroup(Linearized_tags, Arrows)
 
-# def Trace(self, LBTree, BTree, node, counter, child_side=None):
-#     if not node:
-#         return
-#     if child_side == None:
-#         line = LBTree.entry_line
-#         L = BTree.entry_line
-#         LBTag = LBTree.tags[0]
-#         BTag = BTree.tags[0]
-#         animate_L_and_tags(self, L, line, LBTag, BTag, forward=True)
+def show_order_sub_scene(self, Linearized_tags, Arrows, timeline, type):
+    #Show preorder
+    ommited_objs = VGroup()
+    chosen_objs = VGroup()
+    if type == "preorder":
+        indication_color = BLUE_C
+        order_text = Tex("Pre-order visits")
+        order_text[0][0:9].set_color(indication_color)
+        order_match = 1
+    elif type == "inorder":
+        indication_color = YELLOW_D
+        order_text = Tex("In-order visits")
+        order_text[0][0:8].set_color(indication_color)
+        order_match = 2
+    elif type == "postorder":
+        indication_color = RED_D
+        order_text = Tex("Post-order visits")
+        order_text[0][0:10].set_color(indication_color)
+        order_match = 3  
+    order_text.next_to(timeline, DOWN, buff = 1)
+    align_center(order_text, timeline, 'x')
 
-#         line = LBTree.lines[1]
-#         L = BTree.Ls[0]
-#         LBTag = LBTree.tags[1]
-#         BTag = BTree.tags[1]
-#         animate_L_and_tags(self, L, line, LBTag, BTag, forward=True)
-#         counter[0] += 1
-#         self.add(Tex(str(counter[0]), color=YELLOW).shift(UP*2))
-#         Trace(self, LBTree, BTree, node.left, counter, 'left')
-#         if node.left:
-#             self.add(Tex(str(counter[0]), color=YELLOW))
-#             L = BTree.Ls[counter[0]-2]
-#             line = LBTree.lines[counter[0]]
-#             LBTag = LBTree.tags[counter[0]]
-#             animate_L_and_tags(self, L, line, LBTag, BTag, forward=False)
-#         Trace(self, LBTree, BTree, node.right, counter, 'right')
-#     else:
-#         # Preorder
-#         line = LBTree.lines[counter[0]]
-#         L = BTree.Ls[counter[0]-1]
-#         LBTag = LBTree.tags[counter[0]]
-#         BTag = BTree.tags[counter[0]]
-#         animate_L_and_tags(self, L, line, LBTag, BTag, forward=True)
-#         counter[0] += 1
-#         Trace(self, LBTree, BTree, node.left, counter, 'left')
-#         Trace(self, LBTree, BTree, node.left, counter, 'right')
-#         # Inorder
-#         if node.left:
-#             line = LBTree.lines[counter[0]]
-#             LBTag = LBTree.tags[counter[0]]
-#             self.add(Tex(str(counter[0]), color=PINK).shift(DOWN*2))
-#             animate_L_and_tags(self, L, line, LBTag, BTag, forward=False)
-#         Trace(self, LBTree, BTree, node.right, counter, 'right')
-#         # postorder
-#         if node.right:
-#             line = LBTree.lines[counter[0]]
-#             LBTag = LBTree.tags[counter[0]]
-#             animate_L_and_tags(self, L, line, LBTag, BTag, forward=False)
-
-def animate_L_and_tags(self, L, BTag, forward=True):
-    if isinstance(L, Line):
-        start = L.get_start()
-        end = L.get_end()
-        mid = (start + end) / 2
-        L1 = Line(start, mid)
-        L2 = Line(mid, end)
-        L = [L1, L2] 
-    if forward:
-        BTreeDotAni1 = MoveAlongPath(self.trace_dot_BTree, L[0])
-        BTreeDotAni2 = MoveAlongPath(self.trace_dot_BTree, L[1])
-    else:
-        BTreeDotAni1 = MoveAlongPath(self.trace_dot_BTree, L[1].put_start_and_end_on(L[1].get_end(), L[1].get_start()))
-        BTreeDotAni2 = MoveAlongPath(self.trace_dot_BTree, L[0].put_start_and_end_on(L[0].get_end(), L[0].get_start()))
-    self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2)), run_time=2)
-    self.play(Indicate(BTag, color=YELLOW), run_time=2)
-    self.wait(0.2)
-
-def Trace(self, BTree, node, counter):
-    if not node:
-        return
-    if node == BTree.root:
-        # Pre traversal 
-        L = BTree.entry_line
-        BTag = BTree.tags[0]
-        animate_L_and_tags(self, L, BTag, forward=True)
-    # Preorder
-    original_counter = counter[0]
-    L = BTree.Ls[counter[0]]
-    BTag = BTree.tags[counter[0]+1]
-    animate_L_and_tags(self, L, BTag, forward=True)
-    counter[0] += 1
-    Trace(self, BTree, node.left, counter)
-    # Inorder
-    # When you're back, you certainly had a left regular or null child
-    # Make it connnect to you
-    counter[0] = original_counter
-    L = BTree.Ls[counter[0]]
-    BTag = BTree.tags[counter[0]+1]
-    animate_L_and_tags(self, L, BTag, forward=False)
+    for tag, arrow in zip(Linearized_tags, Arrows):
+        # Ommit others
+        if tag.order != order_match or arrow.order != order_match or tag.number is None:
+            ommited_objs.add(tag, arrow)
+        else:
+            chosen_objs.add(tag, arrow)
+    self.play(FadeOut(ommited_objs), run_time=1)
+    self.wait()
+    self.play(Indicate(chosen_objs, color=BLUE_C), FadeIn(order_text), run_time=2)
+    self.wait()
+    self.play(FadeOut(order_text))
+    self.wait()
+    self.play(FadeIn(ommited_objs), run_time=1)
+    self.wait()
     
-    counter[0] += 1
-    # check your right children
-    Trace(self, BTree, node.right, counter)
-    # Postorder
 
-    L = BTree.Ls[counter[0]]
-    BTag = BTree.tags[counter[0]+1]
-    animate_L_and_tags(self, L, BTag, forward=False)
+def show_order_scene(self, Linearized_tags, Arrows, timeline):
+    #Show preorder
+    show_order_sub_scene(self, Linearized_tags, Arrows, timeline, "preorder")
+    #Show inorder
+    show_order_sub_scene(self, Linearized_tags, Arrows, timeline, "inorder")
+    #Show postorder
+    show_order_sub_scene(self, Linearized_tags, Arrows, timeline, "postorder")
