@@ -1,6 +1,7 @@
 from manim import *
 from objects import *
 from processing import *
+from scenes import *
 
 dots_color=[RED, ManimColor("#2f9e44"), ManimColor("#228be6"), ManimColor("#a5d8ff"), GREY]
 lines_color = [YELLOW, ORANGE, PURPLE]
@@ -19,26 +20,11 @@ class RecursiveTreeStructure(Scene):
 
         BTree = BinaryTree(root=buildTree(dots_color, 3), x_start=0, x_distance=3, y_start=3 ,y_distance=1, dots_color=dots_color, lines_color=lines_color)
         BTree.build_structure(BTree.root)
+        BTree.add_double_tags()
         BTree.move_to([4.5, -2.5,0])
         BTree.scale_all(0.5)
         self.add(BTree)
         self.wait(1)
-
-        OFFSET = 0.05 * UP  # or RIGHT, or use a random vector for variety
-
-        for L in BTree.Ls:
-            # Slight upward shift to prevent overlap
-            self.add(Dot(color=GREEN, radius=0.1).move_to(L[0].get_start() + OFFSET))
-            self.add(Dot(color=BLUE, radius=0.1).move_to(L[1].get_start() + OFFSET))
-            
-            # Slight downward shift for end dots
-            self.add(Dot(color=RED, radius=0.1, fill_opacity=1).move_to(L[0].get_end() - OFFSET))
-            self.add(Dot(color=PINK, radius=0.1, fill_opacity=1).move_to(L[1].get_end() - OFFSET))
-            
-            self.wait(0.2)
-
-        
-        
 
         timeline = NumberLine(
             x_range=[0, 12, 1],
@@ -54,123 +40,49 @@ class RecursiveTreeStructure(Scene):
         self.add(timeline)
         for tick in timeline.ticks:
             tick.set_color(YELLOW)
-        trace_dot_LBTree = Dot(color=YELLOW, radius=0.1).align_to(LBTree,DL)
-        trace_dot_BTree = Dot(color=YELLOW, radius=0.1).move_to(BTree.entry_dot.get_center())
+        self.trace_dot_LBTree = Dot(color=YELLOW, radius=0.1).align_to(LBTree,DL)
+        self.trace_circle_BTree = Circle(color=YELLOW, radius=BTree.tags[0].outline.radius+0.07).move_to(BTree.entry_dot.get_center())
+        print("Radius:", BTree.tags[0].outline.radius)
 
-        
-        # for i, (LBtag, line, Btag, L, tick) in enumerate(zip(LBTree.tags, LBTree.lines, BTree.tags, BTree.Double_Ls, timeline.ticks)):
-        #     if not isinstance(line, DashedLine) and not isinstance(L[0], DashedLine):
-        #         if i == 0:
-        #             L = BTree.entry_line
-        #             BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L)
-        #             LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
-        #             self.play(AnimationGroup(BTreeDotAni1, LBTreeDotAni), run_time=2)
-        #             self.wait(0.2)
-        #         else:
-        #             self.play(Indicate(L[1], color=GREEN), run_time=2)
-        #             BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L[1])
-        #             self.play(Indicate(L[0], color=YELLOW), run_time=2)
-        #             BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, L[0])
-        #             LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
-        #             self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
-        #             self.wait(0.2)
-        #     else:
-        #         if i == 0:
-        #             L = BTree.entry_line
-        #             fullLine = Line(line.get_start(), line.get_end())
-        #             LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, fullLine)
-        #             BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L)
-        #             self.play(AnimationGroup(BTreeDotAni1, LBTreeDotAni), run_time=2)
-        #             self.wait(0.2)
-        #         else:
-        #             full_L = VGroup(Line(L[0].get_start(), L[0].get_end()), Line(L[1].get_start(), L[1].get_end()))
-        #             fullLine = Line(line.get_start(), line.get_end())
-        #             BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, full_L[1])
-        #             BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, full_L[0])
-        #             LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, fullLine)
-        #             self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
-        #             self.wait(0.2)
+        LBtags_seen = {}
+        for i, (LBtag, line, Btag, tick) in enumerate(zip(LBTree.tags, LBTree.lines, BTree.Double_tags, timeline.ticks)):
+            count = LBtags_seen.get(LBtag.number, 0) + 1
+            LBtags_seen[LBtag.number] = count
 
-        #     LBtag_copy = LBtag.copy()
-        #     LBtag_copy.generate_target()
-        #     LBtag_copy.target.move_to(tick.get_center())
-        #     LBTreeTagAni = MoveToTarget(LBtag_copy)
-        #     BTreeTagAni = Indicate(Btag, color=YELLOW) 
-        #     self.play(LBTreeTagAni, BTreeTagAni)
-        #     self.wait(0.2)
+            if not isinstance(line, DashedLine):
+                line = Line(line.get_start(), line.get_end())
+            LBTreeDotAni = MoveAlongPath(self.trace_dot_LBTree, line)
+            BTreeCircleAni = self.trace_circle_BTree.animate.move_to(Btag.get_center())
 
-        # self.wait(2)
-        
-        def Trace(self, LBTree, BTree, node=BTree.root, i=0, child_side=None):
-            if not node:
-                return
-            if child_side == None:
-                line = LBTree.entry_line
-                L = BTree.entry_line
-                LBTag = LBTree.tags[0]
-                BTag = BTree.tags[0]
-                BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L)
-                LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
-                self.play(AnimationGroup(BTreeDotAni1, LBTreeDotAni), run_time=2)
-                self.play(Indicate(LBTag, color=YELLOW), run_time=2)
-                self.play(Indicate(BTag, color=YELLOW), run_time=2)
-                self.wait(0.2)
+            LBtag_copy = LBtag.copy()
+            LBtag_copy.generate_target()
+            LBtag_copy.target.move_to(tick.get_center())
+            LBTreeTagAni = MoveToTarget(LBtag_copy)
+            if count == 1:
+                indication_color =  ManimColor("#74D479")
+            elif count == 2:
+                indication_color = ManimColor("#FFC940")
+            elif count == 3:
+                indication_color = ManimColor("#FF3264")
+            if not LBtag.number:
+                indication_color = ManimColor("#74D479")
 
-                line = LBTree.lines[0]
-                L = BTree.Ls[0]
-                LBTag = LBTree.tags[1]
-                BTag = BTree.tags[1]
-                BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L[0])
-                BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, L[1])
-                LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
-                self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
-                self.play(Indicate(LBTag, color=YELLOW), run_time=2)
-                self.play(Indicate(BTag, color=YELLOW), run_time=2)
-                self.wait(0.2)
-                self.Trace(LBTree, BTree, node.left, i+1, 'left')
-            else:
-                # Preorder
-                line = LBTree.lines[i]
-                L = BTree.Ls[i]
-                LBTag = LBTree.tags[i+1]
-                BTag = BTree.tags[i+1]
-                BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L[0])
-                BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, L[1])
-                LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
-                self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
-                self.play(Indicate(LBTag, color=YELLOW), run_time=2)
-                self.play(Indicate(BTag, color=YELLOW), run_time=2)
-                self.wait(0.2)
-                self.Trace(LBTree, BTree, node.left, i+1, 'left')
+            arrow = Arrow(start=tick.get_bottom() + DOWN*1, end= tick.get_bottom(), color = indication_color, stroke_width=2,buff=0.1, max_stroke_width_to_length_ratio=1)
 
-                # Inorder
-                if node.left:
-                    line = LBTree.lines[i]
-                    LBTag = LBTree.tags[i+1]
-                    BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L[1])
-                    BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, L[0])
-                    LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
-                    self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
-                    self.play(Indicate(LBTag, color=YELLOW), run_time=2)
-                    self.play(Indicate(BTag, color=YELLOW), run_time=2)
-                    self.wait(0.2)
-                self.Trace(LBTree, BTree, node.right, i+1, 'right')
-                # postorder
-                if node.right:
-                    line = LBTree.lines[i]
-                    LBTag = LBTree.tags[i+1]
-                    BTreeDotAni1 = MoveAlongPath(trace_dot_BTree, L[1])
-                    BTreeDotAni2 = MoveAlongPath(trace_dot_BTree, L[0])
-                    LBTreeDotAni = MoveAlongPath(trace_dot_LBTree, line)
-                    self.play(AnimationGroup(Succession(BTreeDotAni1, BTreeDotAni2), LBTreeDotAni), run_time=2)
-                    self.play(Indicate(LBTag, color=YELLOW), run_time=2)
-                    self.play(Indicate(BTag, color=YELLOW), run_time=2)
-                    self.wait(0.2)
-        Trace(self, LBTree, BTree, node=BTree.root, i=0, child_side=None)
+            # Run LBTreeDotAni and BTreeCircleAni in parallel, then LBTreeTagAni
+            LBtag.z_index = self.trace_dot_LBTree.z_index + 1
+            self.play(
+                Succession(
+                    AnimationGroup(BTreeCircleAni, LBTreeDotAni, lag_ratio=0, run_time=2),
+                    Indicate(LBtag, color=indication_color),
+                    LBTreeTagAni,
+                    GrowArrow(arrow)
+                ),
+                run_time=4
+            )
+            self.wait(0.2)
+        self.wait(2)
+
+    
 
 
-            
-
-        
-
-        

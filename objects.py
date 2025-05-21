@@ -112,9 +112,9 @@ class LinearizedBTree(VGroup):
             self.add_number_tag(None, self.dots_color[-1])
             if child_side is not None:
                 if child_side == "left":
-                    self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[2])  # PURPLE
+                    self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], False, color=self.lines_color[2])  # PURPLE
                 elif child_side == "right":
-                    self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[1])  # ORANGE
+                    self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], False, color=self.lines_color[1])  # ORANGE
             self.x += self.x_distance
             self.y -= self.y_distance
             return
@@ -139,9 +139,9 @@ class LinearizedBTree(VGroup):
         self.add_number_tag(node.val, node.color)
         if child_side is not None:
             if child_side == "left":
-                self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[2])
+                self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], False, color=self.lines_color[2])
             elif child_side == "right":
-                self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[1])
+                self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], False, color=self.lines_color[1])
         self.x += self.x_distance
         self.y -= self.y_distance
     def build_structure_with_entry(self, root):
@@ -151,7 +151,7 @@ class LinearizedBTree(VGroup):
         self.x += self.x_distance
         self.y += self.y_distance
         self.build_structure(root)
-        self.exit_line = self.draw_line([self.x - self.x_distance, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[0])
+        self.exit_line = self.draw_line([self.x - self.x_distance, self.y + self.y_distance, 0], [self.x, self.y, 0], False, color=self.lines_color[0])
         self.exit_dot = Dot(color=self.dots_color[0], radius=0.25).move_to([self.x, self.y, 0])
         self.add(self.exit_dot)
     def display(self, scene):
@@ -196,7 +196,6 @@ class BinaryTree(VGroup):
         self.y = y_start
         self.y_distance = y_distance
         self.Ls = VGroup()
-        self.Double_Ls = VGroup()
         self.Double_tags = VGroup()
         self.tags = VGroup()
         self.entry_dot = Dot(color=RED, radius=0.25).move_to([self.x, self.y, 0])
@@ -204,7 +203,7 @@ class BinaryTree(VGroup):
         self.y -= self.y_distance
         self.dots_color = dots_color
         self.lines_color = lines_color
-        self.add(self.Ls, self.tags, self.entry_dot, self.entry_line, self.Double_Ls)
+        self.add(self.Ls, self.tags, self.entry_dot, self.entry_line)
         self.entry_line.z_index = -100
 
     def draw_dot(self, color=WHITE):
@@ -221,7 +220,7 @@ class BinaryTree(VGroup):
     def add_number_tag(self, number, color):
         tag = NumberTag(number=number, fill_color=color, radius=0.3)
         tag.move_to([self.x, self.y, 0])
-        self.tags.add(tag)
+        return tag
     
     def draw_L(self, start, end, dashed, color=WHITE, x_first=True):
         if x_first:
@@ -250,21 +249,31 @@ class BinaryTree(VGroup):
 
     def build_structure(self, node, child_side=None, level=0):
         if node is None:
+            #Special case -> you connect to your parent
             if child_side == "left":
-                L = self.draw_L([self.x + self.x_distance/2, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[2], x_first=True)
+                L = self.draw_L([self.x + self.x_distance/2, self.y + self.y_distance, 0], [self.x, self.y, 0], False, color=self.lines_color[2], x_first=True)
                 self.Ls.add(L)
             elif child_side == "right":
-                L = self.draw_L([self.x - self.x_distance/2, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[1], x_first=True)
+                L = self.draw_L([self.x - self.x_distance/2, self.y + self.y_distance, 0], [self.x, self.y, 0], False, color=self.lines_color[1], x_first=True)
                 self.Ls.add(L)
-            self.add_number_tag(None, self.dots_color[-1])
+            tag = self.add_number_tag(None, self.dots_color[-1])
+            self.tags.add(tag)
+            print("to double tags: (null)", tag)
+            self.Double_tags.add(tag)
             return
         # Pre-order
         offset = self.x_distance/(2**level)        
         original_x, original_y = self.x, self.y
+
+        # Connect to your left child
         if node.left:
             L = self.draw_L([self.x, self.y, 0], [self.x - offset, self.y - self.y_distance, 0], False, color=self.lines_color[2])
             self.Ls.add(L)
-        self.add_number_tag(node.val, node.color)
+        tag = self.add_number_tag(node.val, node.color)
+        self.tags.add(tag)
+        print("to double tags: (pre)", tag.label.get_text())
+        self.Double_tags.add(tag)
+
         self.x -= offset
         self.y -= self.y_distance
         self.build_structure(node.left, "left", level + 1)
@@ -272,6 +281,11 @@ class BinaryTree(VGroup):
         # Inorder
         offset = self.x_distance / (2 ** level)
         self.x, self.y = original_x, original_y
+        print("to double tags: (in)", tag.label.get_text())
+        tag = self.add_number_tag(node.val, node.color)
+        self.Double_tags.add(tag)
+
+        # Connect to your right child
         if node.right:
             L = self.draw_L([self.x, self.y, 0], [self.x + offset, self.y - self.y_distance, 0], False, color=self.lines_color[1])
             self.Ls.add(L)
@@ -280,10 +294,20 @@ class BinaryTree(VGroup):
         self.build_structure(node.right, "right", level + 1)
         # Postorder
         self.x, self.y = original_x, original_y
+        print("to double tags: (post)", tag.label.get_text())
+        tag = self.add_number_tag(node.val, node.color)
+        self.Double_tags.add(tag)
+    def add_double_tags(self):
+        for tag in self.Double_tags:
+            if tag not in self.tags:
+                self.add(tag)
+
+    
     def scale_all(self, scale_factor):
-        for tag in self.tags:
+        for tag in self.Double_tags:
             tag.circle.stroke_width *= scale_factor
+            tag.circle.radius *= scale_factor
             tag.outline.stroke_width *= scale_factor
+            tag.outline.radius *= scale_factor
             tag.label.font_size *= (scale_factor*2)
         self.scale(scale_factor)
-    
