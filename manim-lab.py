@@ -1,7 +1,7 @@
 from manim import *
 from objects import *
 from processing import *
-from scenes import *
+from animations import *
 
 class Test(Scene):
     def construct(self):

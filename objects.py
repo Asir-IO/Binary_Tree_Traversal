@@ -52,6 +52,25 @@ def buildTree(dots_color, num_nodes):
         insert(r, val, color_for_level(level))
     return r
 
+class LinearNode:
+    def __init__(self, key, color=WHITE):
+        self.next = None
+        self.color = color
+        self.val = key
+
+# Insert node into Chain
+def insert_LS(head, key, color):
+    new_node = LinearNode(key, color)
+    if head is None:
+        return new_node 
+    current = head
+    while current.next:
+        current = current.next
+    current.next = new_node
+    return head
+
+
+
 
 class NumberTag(VGroup):
     def __init__(self, number: int, fill_color=BLUE, radius=0.5, num_to_circle_ratio=130,**kwargs):
@@ -362,4 +381,182 @@ class NodeCode(VGroup):
         elif type == "base":
             return self.code_block.code_lines[2:4]
         return
+    
+class LinearizedChain(VGroup):
+    def __init__(self, root, x_start=-4, x_distance=0.5, y_start=-2, y_distance=1.12, dots_color=[RED, ManimColor("#228be6"), ManimColor("#a5d8ff"), ManimColor("#2f9e44"), GREY], lines_color=[YELLOW, ORANGE], **kwargs):
+        super().__init__(**kwargs)
+        self.root = root
+        self.x = x_start
+        self.x_distance = x_distance
+        self.y = y_start
+        self.y_distance = y_distance
+        self.lines = VGroup()
+        self.tags = VGroup()
+        self.entry_dot = None
+        self.entry_line = None
+        self.exit_dot = None
+        self.dots_color = dots_color
+        self.lines_color = lines_color
+        self.add(self.lines, self.tags)
+
+    def draw_line(self, start, end, dashed, color=WHITE):
+        if dashed:
+            line = DashedLine(start, end, dash_length=0.2, dashed_ratio=0.7, stroke_width=7, color=color)
+        else:
+            line = Line(start, end, stroke_width=7, color=color)
+        self.lines.add(line)
+        return line
+
+    def add_number_tag(self, number, color):
+        tag = NumberTag(number=number, fill_color=color, radius=0.3)
+        tag.move_to([self.x, self.y, 0])
+        tag.scale(0.85)
+        self.tags.add(tag)
+        return tag
+
+    def build_structure(self, linearnode):
+        if linearnode is None:
+            self.add_number_tag(None, self.dots_color[-1])
+            self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[1])  # ORANGE
+            self.x += self.x_distance
+            self.y -= self.y_distance
+            return
+
+        # Preorder
+        self.add_number_tag(linearnode.val, linearnode.color)
+        self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y + self.y_distance, 0], False, color=self.lines_color[1])
+        self.x += self.x_distance
+        self.y += self.y_distance
+
+        self.build_structure(linearnode.next)
+
+        # Postorder
+        self.add_number_tag(linearnode.val, linearnode.color)
+        self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[1])  # ORANGE
+        self.x += self.x_distance
+        self.y -= self.y_distance
+
+    def build_structure_with_entry(self, head):
+        self.entry_dot = Dot(color=self.dots_color[0], radius=0.25).move_to([self.x, self.y, 0])
+        self.add(self.entry_dot)
+        self.entry_line = self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y + self.y_distance, 0], False, color=self.lines_color[0])
+        self.x += self.x_distance
+        self.y += self.y_distance
+        self.build_structure(head)
+        self.lines[-1].set_stroke(color=self.lines_color[0])
+        self.exit_dot = Dot(color=self.dots_color[0], radius=0.25).move_to([self.x, self.y, 0])
+        self.add(self.exit_dot)
+
+    def display(self, scene, wait=0.5):
+        # Animate the first dot and line
+        self.entry_line.z_index = 0
+        self.entry_dot.z_index = 3
+        scene.play(FadeIn(self.entry_dot), run_time=1)
+        scene.play(Create(self.entry_line), run_time=1)
+        scene.bring_to_front(self.entry_dot)
+        scene.wait(wait)
+
+        # Animate tags and lines for the rest
+        for i, (ln, tg) in enumerate(zip(self.lines[1:], self.tags)):
+            ln.z_index = 0
+            tg.z_index = 3
+            scene.play(FadeIn(tg), run_time=1)
+            scene.wait(wait/5)
+            scene.play(Create(ln), run_time=1)
+            scene.bring_to_front(tg)
+            scene.wait(wait)
+
+        # Animate the final dot
+        self.exit_dot.z_index = 3
+        scene.play(FadeIn(self.exit_dot), run_time=1)
+        scene.bring_to_front(self.exit_dot)
+        scene.wait(wait)
+
+    def scale_all(self, scale_factor):
+        for tag in self.tags:
+            tag.circle.stroke_width *= scale_factor
+            tag.outline.stroke_width *= scale_factor
+            tag.label.font_size *= (scale_factor*1.5)
+        self.scale(scale_factor)
+
+class Chain(VGroup):
+    def __init__(self, root, x_start=-4, x_distance=0.5, y_start=-2, dots_color=[RED, ManimColor("#228be6"), ManimColor("#a5d8ff"), ManimColor("#2f9e44"), GREY], lines_color=[YELLOW, ORANGE], **kwargs):
+        super().__init__(**kwargs)
+        self.root = root
+        self.x = x_start
+        self.x_distance = x_distance
+        self.y = y_start
+        self.lines = VGroup()
+        self.tags = VGroup()
+        self.entry_dot = None
+        self.entry_line = None
+        self.exit_dot = None
+        self.exit_line = None
+        self.dots_color = dots_color
+        self.lines_color = lines_color
+        self.add(self.lines, self.tags)
+
+    def draw_line(self, start, end, dashed, color=WHITE):
+        if dashed:
+            line = DashedLine(start, end, dash_length=0.3, dashed_ratio=0.7, stroke_width=7, color=color)
+        else:
+            line = Line(start, end, stroke_width=7, color=color)
+        self.lines.add(line)
+        return line
+
+    def add_number_tag(self, number, color):
+        tag = NumberTag(number=number, fill_color=color, radius=0.3)
+        tag.move_to([self.x, self.y, 0])
+        tag.scale(0.85)
+        self.tags.add(tag)
+        return tag
+
+    def build_structure(self, linearnode):
+        if linearnode is None:
+            self.add_number_tag(None, self.dots_color[-1])
+            return
+
+        # Preorder
+        self.add_number_tag(linearnode.val, linearnode.color)
+        self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y, 0], False, color=self.lines_color[1])
+        self.x += self.x_distance
+
+        self.build_structure(linearnode.next)
+
+    def build_structure_with_entry(self, head):
+        self.entry_dot = Dot(color=self.dots_color[0], radius=0.25).move_to([self.x, self.y, 0])
+        self.add(self.entry_dot)
+        self.entry_line = self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y, 0], False, color=self.lines_color[0])
+        self.x += self.x_distance
+        self.build_structure(head)
+
+    def display(self, scene, wait=0.5):
+        # Animate the first dot and line
+        self.entry_line.z_index = 0
+        self.entry_dot.z_index = 3
+        scene.play(FadeIn(self.entry_dot), run_time=1)
+        scene.play(Create(self.entry_line), run_time=1)
+        scene.bring_to_front(self.entry_dot)
+        scene.wait(wait)
+
+        # Animate tags and lines for the rest
+        for i, (ln, tg) in enumerate(zip(self.lines[1:], self.tags)):
+            ln.z_index = 0
+            tg.z_index = 3
+            scene.play(FadeIn(tg), run_time=1)
+            scene.wait(wait/5)
+            scene.play(Create(ln), run_time=1)
+            scene.bring_to_front(tg)
+            scene.wait(wait)
+        tg = self.tags[-1]
+        tg.z_index = 3
+        scene.play(FadeIn(tg), run_time=1)
+        scene.wait(wait/5)
+
+    def scale_all(self, scale_factor):
+        for tag in self.tags:
+            tag.circle.stroke_width *= scale_factor
+            tag.outline.stroke_width *= scale_factor
+            tag.label.font_size *= (scale_factor*1.5)
+        self.scale(scale_factor)
 
