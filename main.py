@@ -49,15 +49,30 @@ class Scene05_Trace(Scene):
 
 class Scene01_Intro(Scene):
     def construct(self):
-        head = LinearNode(1, RED)
+        self.add(NumberPlane())
+        head = LinearNode(1, PURPLE)
         head = insert_LS(head, 2, BLUE_C)
         head = insert_LS(head, 3, GREEN_D)
 
-        LChain = LinearizedChain(head)
-        LChain.build_structure_with_entry(head)
-        LChain.display(self, wait=0.3)
-
         Chain1 = Chain(head, x_distance=1.5)
         Chain1.build_structure_with_entry(head)
-        Chain1.display(self, wait=0.2)
+        move_by_anchor(Chain1, [-3.5,2,0], "left")
 
+        txt_1 = Tex("Visit every node?")
+        txt_1.move_to(Chain1, DOWN)
+        txt_1.shift(DOWN)
+
+        LChain = LinearizedChain(head)
+        LChain.build_structure_with_entry(head)
+        LChain.next_to(Chain1, DOWN, buff = 0.2)
+        LChain.scale_all(0.8)
+        
+        Chain1.display(self, wait=0.2)
+        self.play(Write(txt_1))
+        self.wait(2)
+        self.play(txt_1.animate.move_to([0, 3, 0]))
+        LChain.display(self, wait=0.3)
+        self.wait()
+
+        indicate_steps(self, LChain)
+        self.wait()

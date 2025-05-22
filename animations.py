@@ -118,3 +118,40 @@ def show_order_scene(self, Linearized_tags, Arrows, timeline):
     show_order_sub_scene(self, Linearized_tags, Arrows, timeline, "inorder")
     #Show postorder
     show_order_sub_scene(self, Linearized_tags, Arrows, timeline, "postorder")
+
+# Scene01_Intro
+def indicate_steps(self, structure):
+    frame = StepFrame()
+    frame.rec.stretch_to_fit_width(width=structure.tags[0].outline.radius * 2 + 0.1)
+    frame.rec.stretch_to_fit_height(structure.height+1)
+    frame.update_text()
+    frame.move_to(structure.tags[0].get_center())
+    frame.align_to(structure, DOWN)
+    frame.shift(DOWN*0.5)
+    self.play(Write(frame), run_time=1)
+    self.wait(0.5)
+    self.play(Indicate(structure.tags[0]))
+    for i, tag in enumerate(structure.tags[1:].add(structure.exit_dot)):
+        step = frame.text_group.copy()
+        print("i:", i)
+        if(tag == structure.exit_dot):
+            new_txt = Tex(f"{i+1}", font_size=frame.txt2.font_size).move_to(frame.text_group[1])
+            self.play(ReplacementTransform(frame.text_group[1], new_txt))
+            frame.text_group[1] = new_txt
+            final_txt = frame.text_group.copy()
+            self.play(Unwrite(frame.text_group))
+
+            self.play(frame.animate.match_x(tag))
+            new_number = Tex(f"{i+2}", font_size=frame.txt2.font_size).move_to(final_txt[1])
+            final_txt[1].become(new_number)  
+
+            final_txt.move_to(frame.rec.get_top() + DOWN * (final_txt.height + 0.025))
+            self.play(Write(final_txt))
+            self.wait()
+            self.play(FadeOut(frame, final_txt))
+        else:
+            step[1] = Tex(f"{i+1}", font_size=frame.txt2.font_size).move_to(frame.text_group[1].get_center())
+            self.play(ReplacementTransform(frame.text_group, step))     
+            frame.text_group = step
+            self.play(AnimationGroup(frame.animate.match_x(tag)))
+            self.play(Indicate(tag))

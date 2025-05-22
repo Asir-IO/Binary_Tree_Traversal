@@ -27,3 +27,11 @@ def spread_in_grid(vgroup: VGroup, rows: int = 8, cols: int = 14, padding: float
             y = frame_height / 2 - (row + 0.5) * cell_height
 
             mob.move_to([x, y, 0])
+
+def move_by_anchor(obj, target, anchor):
+    if (anchor == "left"):
+        anchor_pos = obj.get_left()
+    if (anchor == "right"):
+        anchor_pos = obj.get_right()
+    shift = target - anchor_pos
+    obj.shift(shift)

@@ -93,6 +93,27 @@ class NumberTag(VGroup):
         self.label = label
         self.radius = radius
 
+class StepFrame(VGroup):
+    def __init__(self, stroke_color=YELLOW, width=2, height=6, step=1,**kwargs):
+        super().__init__(**kwargs)
+        self.rec = Rectangle(width=width, height=height)
+        self.rec.set_stroke(color=stroke_color)
+        self.txt1 = Tex("Move")
+        self.txt1.font_size = 18 * width
+        self.txt2 = Tex(f"{step}")
+        self.txt2.font_size = self.txt1.font_size * 1.5
+        self.text_group = VGroup(self.txt1, self.txt2).arrange(DOWN, buff=0.02)
+        self.text_group.move_to(self.rec.get_bottom() + UP * (self.text_group.height + 0.3))
+
+        self.add(self.rec, self.text_group)
+    def update_text(self):
+        self.txt1.font_size = 30 * self.width
+        self.txt2.font_size = self.txt1.font_size * 1.5
+    def update_step(self, n):
+        new_txt = Tex(str(n)).move_to(self.txt2.get_center())
+        anim = ReplacementTransform(self.txt2, new_txt)
+        self.txt2 = new_txt  # Update reference
+        return anim
 
 class LinearizedBTree(VGroup):
     def __init__(self, root, x_start=-4, x_distance=0.5, y_start=-2, y_distance=1.5, dots_color=[RED, GREY, ManimColor("#228be6"), ManimColor("#2f9e44")], lines_color=[YELLOW, ORANGE, PURPLE], **kwargs):
@@ -383,7 +404,7 @@ class NodeCode(VGroup):
         return
     
 class LinearizedChain(VGroup):
-    def __init__(self, root, x_start=-4, x_distance=0.5, y_start=-2, y_distance=1.12, dots_color=[RED, ManimColor("#228be6"), ManimColor("#a5d8ff"), ManimColor("#2f9e44"), GREY], lines_color=[YELLOW, ORANGE], **kwargs):
+    def __init__(self, root, x_start=-4, x_distance=0.9, y_start=-2, y_distance=1.12, dots_color=[RED, ManimColor("#228be6"), ManimColor("#a5d8ff"), ManimColor("#2f9e44"), GREY], lines_color=[YELLOW, ORANGE], **kwargs):
         super().__init__(**kwargs)
         self.root = root
         self.x = x_start
@@ -475,7 +496,9 @@ class LinearizedChain(VGroup):
     def scale_all(self, scale_factor):
         for tag in self.tags:
             tag.circle.stroke_width *= scale_factor
+            tag.circle.radius *= scale_factor
             tag.outline.stroke_width *= scale_factor
+            tag.outline.radius *= scale_factor
             tag.label.font_size *= (scale_factor*1.5)
         self.scale(scale_factor)
 
