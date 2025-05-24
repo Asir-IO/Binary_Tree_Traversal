@@ -1,4 +1,6 @@
 from manim import *
+from processing import *
+import math
 
 # Simple binary tree node
 class Node:
@@ -24,7 +26,9 @@ def insert(root, key, color):
     return root
 
 # Create a basic tree
-def buildTree(dots_color, num_nodes):
+def buildTree(dots_color=None, num_nodes=3):
+    if dots_color is None:
+        dots_color = [RED] + [RED] * int(math.log(num_nodes + 1, 2)) + [GREY]
     def median_order(start, end, level, nodes):
         if start > end:
             return
@@ -92,28 +96,34 @@ class NumberTag(VGroup):
         self.outline = outline
         self.label = label
         self.radius = radius
+    def set_color(self, color):
+        self.circle.set_fill(color)
+        self.outline.set_fill(color)
+        self.outline.color=color
 
 class StepFrame(VGroup):
     def __init__(self, stroke_color=YELLOW, width=2, height=6, step=1,**kwargs):
         super().__init__(**kwargs)
         self.rec = Rectangle(width=width, height=height)
         self.rec.set_stroke(color=stroke_color)
-        self.txt1 = Tex("Move")
-        self.txt1.font_size = 18 * width
-        self.txt2 = Tex(f"{step}")
-        self.txt2.font_size = self.txt1.font_size * 1.5
-        self.text_group = VGroup(self.txt1, self.txt2).arrange(DOWN, buff=0.02)
-        self.text_group.move_to(self.rec.get_bottom() + UP * (self.text_group.height + 0.3))
-
+        self.step=step
+        self.text_group = always_redraw(self.make_text_group)
+        self.txt1 = self.text_group[0]
+        self.txt2 = self.text_group[1]
         self.add(self.rec, self.text_group)
+    def make_text_group(self):
+        txt1 = Tex(
+            "Move",
+            font_size=font_size_by_ratio("Move", width=self.rec.width, ratio=4/5)
+        )
+        txt2 = Tex(str(self.step), font_size= 2*txt1.font_size)
+        group = VGroup(txt1, txt2).arrange(DOWN)
+        group.move_to(self.rec.get_bottom() + UP * (group.height))
+        return group
     def update_text(self):
         self.txt1.font_size = 30 * self.width
         self.txt2.font_size = self.txt1.font_size * 1.5
-    def update_step(self, n):
-        new_txt = Tex(str(n)).move_to(self.txt2.get_center())
-        anim = ReplacementTransform(self.txt2, new_txt)
-        self.txt2 = new_txt  # Update reference
-        return anim
+
 
 class LinearizedBTree(VGroup):
     def __init__(self, root, x_start=-4, x_distance=0.5, y_start=-2, y_distance=1.5, dots_color=[RED, GREY, ManimColor("#228be6"), ManimColor("#2f9e44")], lines_color=[YELLOW, ORANGE, PURPLE], **kwargs):
@@ -223,13 +233,15 @@ class LinearizedBTree(VGroup):
     def scale_all(self, scale_factor):
         for tag in self.tags:
             tag.circle.stroke_width *= scale_factor
+            tag.circle.radius *= scale_factor
             tag.outline.stroke_width *= scale_factor
+            tag.outline.radius *= scale_factor
             tag.label.font_size *= (scale_factor*1.5)
         self.scale(scale_factor)
 
 
 class BinaryTree(VGroup):
-    def __init__(self, root, x_start=0, x_distance=1, y_start=3, y_distance=1/3, dots_color=[RED, GREY, ManimColor("#228be6"), ManimColor("#2f9e44")], lines_color=[YELLOW, ORANGE, PURPLE], **kwargs):
+    def __init__(self, root, x_start=0, x_distance=3, y_start=3, y_distance=1, dots_color=[RED, GREY, ManimColor("#228be6"), ManimColor("#2f9e44")], lines_color=[YELLOW, ORANGE, PURPLE], **kwargs):
         super().__init__(**kwargs)
         self.root = root
         self.x = x_start
@@ -244,7 +256,7 @@ class BinaryTree(VGroup):
         self.y -= self.y_distance
         self.dots_color = dots_color
         self.lines_color = lines_color
-        self.add(self.Ls, self.tags, self.entry_dot, self.entry_line)
+        self.add(self.entry_dot, self.entry_line, self.Ls, self.tags)
         self.entry_line.z_index = -100
 
     def draw_dot(self, color=WHITE):
@@ -339,9 +351,12 @@ class BinaryTree(VGroup):
         tag = self.add_number_tag(node.val, node.color)
         self.Double_tags.add(tag)
     def add_double_tags(self):
+        # Add return tags to the object (you never added the double tags to the object before)
+        return_tags = VGroup()
         for tag in self.Double_tags:
             if tag not in self.tags:
-                self.add(tag)
+                return_tags.add(tag)
+        self.add(return_tags)
 
     
     def scale_all(self, scale_factor):
@@ -352,6 +367,15 @@ class BinaryTree(VGroup):
             tag.outline.radius *= scale_factor
             tag.label.font_size *= (scale_factor*2)
         self.scale(scale_factor)
+    def reverse_tags_order(self):
+        self.remove(self.tags)
+        self.tags = self.tags[::-1]
+        self.add(self.tags)
+    def display(self, scene):
+        self.reverse_tags_order()
+        scene.play(Create(VGroup(self.entry_dot, self.entry_line, self.Ls), run_time=6))
+        scene.play(Create(self.remove(*VGroup(self.entry_dot, self.entry_line, self.Ls))), run_time=7)
+        self.reverse_tags_order()
 
 class NodeCode(VGroup):
     def __init__(self, node,**kwargs):

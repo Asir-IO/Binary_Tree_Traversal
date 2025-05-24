@@ -35,3 +35,10 @@ def move_by_anchor(obj, target, anchor):
         anchor_pos = obj.get_right()
     shift = target - anchor_pos
     obj.shift(shift)
+
+def font_size_by_ratio(tex_string, current_font_size=48, width=1, ratio=2/3):
+    temp = Tex(tex_string, font_size=current_font_size)
+    tex_width = temp.width
+    target_tex_width = width * ratio
+    adjusted_font_size = current_font_size * (target_tex_width / tex_width)
+    return adjusted_font_size

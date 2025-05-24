@@ -121,16 +121,16 @@ def show_order_scene(self, Linearized_tags, Arrows, timeline):
 
 # Scene01_Intro
 def indicate_steps(self, structure):
-    frame = StepFrame()
-    frame.rec.stretch_to_fit_width(width=structure.tags[0].outline.radius * 2 + 0.1)
-    frame.rec.stretch_to_fit_height(structure.height+1)
-    frame.update_text()
+    tag_radius = structure.tags[0].outline.radius
+    frame = StepFrame(width=tag_radius*2 + (0.1*tag_radius/0.32), height=structure.height+1)
+    print(f"radius: {structure.tags[0].outline.radius}")
     frame.move_to(structure.tags[0].get_center())
     frame.align_to(structure, DOWN)
     frame.shift(DOWN*0.5)
-    self.play(Write(frame), run_time=1)
+    self.play(FadeIn(frame))
     self.wait(0.5)
     self.play(Indicate(structure.tags[0]))
+    self.wait()
     for i, tag in enumerate(structure.tags[1:].add(structure.exit_dot)):
         step = frame.text_group.copy()
         print("i:", i)
@@ -155,3 +155,93 @@ def indicate_steps(self, structure):
             frame.text_group = step
             self.play(AnimationGroup(frame.animate.match_x(tag)))
             self.play(Indicate(tag))
+
+def naive_traversal_BTree(scene, BTree):
+    # create a dots_all_levels VGroup
+    # Create a level 0 dots group
+    # add a dot to it
+    # start at entry_point, move to the first tag
+    # Create a level 1 dots group
+    # add l dot and r dot to it
+    # move l to left tag and r to right tag 
+    # create a level 2 dots group
+    # for each tag visited in the previous step, add l and r dots
+    # move each dot to its respective tag
+    # do this until reaching tags with a null label, then start going back (back tracking) and bring the dot back to the entry_dot 
+    dots_all_levels = []
+    level_0 = VGroup()
+    dot_0 = Dot(color=YELLOW, radius=0.1).move_to(BTree.entry_dot.get_center())
+    level_0.add(dot_0)
+    scene.add(dot_0)
+    scene.wait()
+
+    # Utility to check if a tag is a leaf (null node)
+    def is_leaf(tag):
+        return tag.number is None
+
+    # Track visited tags
+    visited = set()
+
+    # Level-wise traversal
+    current_level = [BTree.entry_dot]
+    next_level = []
+    level = 0
+    while current_level:
+        level_dots = VGroup()
+        animations = []
+        for i, dot in enumerate(current_level):
+            if level == 0:
+                tag_index = 0
+            else:
+                tag_index = i * 2 + 1  # Assuming binary tree stored with 2*i + 1, 2*i + 2 children
+            if tag_index >= len(BTree.tags):
+                continue
+
+            left_tag = BTree.tags[tag_index]
+            right_index = tag_index + 1
+            right_tag = BTree.tags[right_index] if right_index < len(BTree.tags) else None
+
+            # Left Dot
+            if not is_leaf(left_tag):
+                l_dot = Dot(color=BLUE, radius=0.1).move_to(dot.get_center())
+                scene.add(l_dot)
+                l_dot.generate_target()
+                l_dot.target.move_to(left_tag.get_center())
+                animations.append(MoveToTarget(l_dot))
+                level_dots.add(l_dot)
+                next_level.append(l_dot)
+            
+            # Right Dot
+            if right_tag and not is_leaf(right_tag):
+                r_dot = Dot(color=GREEN, radius=0.1).move_to(dot.get_center())
+                scene.add(r_dot)
+                r_dot.generate_target()
+                r_dot.target.move_to(right_tag.get_center())
+                animations.append(MoveToTarget(r_dot))
+                level_dots.add(r_dot)
+                next_level.append(r_dot)
+        
+        if animations:
+            scene.play(AnimationGroup(*animations, lag_ratio=0.2))
+        
+        dots_all_levels.append(level_dots)
+        current_level = next_level
+        next_level = []
+        level += 1
+        scene.wait()
+
+    # Backtrack all dots to entry
+    for level_dots in reversed(dots_all_levels):
+        back_anis = []
+        for dot in level_dots:
+            dot.generate_target()
+            dot.target.move_to(BTree.entry_dot.get_center())
+            back_anis.append(MoveToTarget(dot))
+        if back_anis:
+            scene.play(AnimationGroup(*back_anis, lag_ratio=0.2))
+        scene.wait()
+
+    # Fade out everything
+    all_dots = VGroup(*[dot for level in dots_all_levels for dot in level])
+    scene.play(FadeOut(all_dots))
+

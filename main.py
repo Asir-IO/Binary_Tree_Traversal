@@ -76,3 +76,10 @@ class Scene01_Intro(Scene):
 
         indicate_steps(self, LChain)
         self.wait()
+
+class Scene02_ShowBTree_1(Scene):
+    def construct(self):
+        self.add(NumberPlane())
+        BTree = BinaryTree(root=buildTree(dots_color, 3))
+        BTree.build_structure(BTree.root)
+        naive_traversal_BTree(self, BTree)
