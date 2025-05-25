@@ -49,6 +49,9 @@ class Test(Scene):
             self.play(AnimationGroup(*[FadeOut(dot) for dot in level_dots]), run_time=2)
         self.play(initial_dot.animate.move_to(BTree.entry_dot))
         self.play(FadeOut(initial_dot))
+        traced_paths = [m for m in self.mobjects if isinstance(m, TracedPath)]
+        self.play(*[FadeOut(tp) for tp in traced_paths])
+        self.remove(*[tp for tp in traced_paths])
     
     def create_branching_dot(self, parent_dot, path_segments, tracer_color=YELLOW):
         dot = Dot()

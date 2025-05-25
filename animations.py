@@ -156,40 +156,104 @@ def indicate_steps(self, structure):
             self.play(AnimationGroup(frame.animate.match_x(tag)))
             self.play(Indicate(tag))
 
+def naive_tarversal_scene(scene):
+    BTree = BinaryTree(root=buildTree([RED, ManimColor("#2f9e44"), ManimColor("#228be6"), GREY], 3))
+    BTree.build_structure(BTree.root)
+    txt1 = Tex("Binary Tree")
+    txt1.move_to([-3, -2, 0])
+    txt2 = Tex("Visit every node?")
+    txt2.move_to([3, -2, 0])
+    txt3 = Tex("Simple enough!", font_size=80)
+    txt3.move_to([0, -2, 0])
+
+    BTree.display(scene)
+    scene.wait()
+    scene.play(Write(txt1), run_time=2)
+    scene.wait(2)
+    scene.play(Write(txt2), run_time=2)
+    scene.wait(2)
+    scene.play(ReplacementTransform(VGroup(txt1, txt2), txt3), run_time = 2)
+    naive_traversal_BTree(scene, BTree)
+    scene.wait()
+    scene.play(Unwrite(txt3), run_time=2)
+    scene.wait()
+
+    txt4 = Tex("Cloning yourself")
+    txt4.move_to([-3, -2, 0])
+    txt4_HI = add_highlight_to_text(txt4, 0, 14, color=RED_D, opacity=0.8, text_z_index=txt4.z_index)
+    txt5 = Tex("Splitting your conciousness")
+    txt5.move_to([3, -2, 0])
+    txt5_HI = add_highlight_to_text(txt5, 0, 24, color=RED_D, opacity=0.8, text_z_index=txt5.z_index)
+    scene.play(Write(txt4), run_time=2)
+    scene.wait()
+    scene.play(Write(txt5), run_time=2)
+    scene.wait()
+    scene.play(GrowFromEdge(txt4_HI, edge=LEFT),GrowFromEdge(txt5_HI, edge=LEFT),run_time=2)
+    scene.wait()
+    scene.play(FadeOut(VGroup(txt4, txt4_HI, txt5, txt5_HI)), run_time=2)
+    scene.wait(2)
+    
+    txt6 = Tex("Sequential way?", font_size=80)
+    txt6.move_to([0, -2, 0])
+    txt6_HI = add_highlight_to_text(txt6, 0, 9, color=GREEN_D, opacity=0.8, text_z_index=txt6.z_index)
+    scene.play(Write(txt6), GrowFromEdge(txt6_HI, edge=LEFT), run_time=2)
+    scene.wait(2)
+def show_solution(scene):
+    return
+
 def naive_traversal_BTree(scene, BTree):
     level_ordered_tags = BTree.get_level_ordered_tags()
     initial_dot = Dot()
     initial_dot.move_to(BTree.entry_dot.get_center())
-    initial_dot.original_pos = BTree.entry_dot.get_center()
+    initial_dot.generate_target()
     scene.play(FadeIn(initial_dot))
-    scene.play(initial_dot.animate.move_to(level_ordered_tags[0]))
+    scene.play(initial_dot.animate.move_to(level_ordered_tags[0][0]))
     level_initial_dots = [VGroup(initial_dot)]
     height = BTree.root.get_height()
+    print(f"entry_pos: {initial_dot.get_center()}")
 
-    for i in range(height):
+    for i in range(height+1):
         level_dots = VGroup()
         #for every dot currently in that level
         for a, dot in enumerate(level_initial_dots[i]):
-            scene.play(Indicate(dot), run_time=2)
-            left_dot = Dot() 
-            left_dot.move_to(dot.get_center())
-            left_dot.original_pos = left_dot.get_center()
+            my_left_L = level_ordered_tags[2**(i)+a-1][1]
+            left_dot = create_branching_dot(scene, dot, my_left_L)
             level_dots.add(left_dot)
-            left_dot.generate_target()
-            left_dot.target.move_to(level_ordered_tags[2**(i+1)+2*a-1].get_center())
-            right_dot = Dot()
-            right_dot.move_to(dot.get_center())
-            right_dot.original_pos = right_dot.get_center()
+            print(f"left dot pos: {left_dot.get_center()}")
+            # left_label = create_position_label(left_dot, font_size=12) 
+            # scene.add(left_label)
+            my_right_L = level_ordered_tags[2**(i)+a-1][2]
+            right_dot = create_branching_dot(scene, dot, my_right_L)
             level_dots.add(right_dot)
-            right_dot.generate_target()
-            right_dot.target.move_to(level_ordered_tags[2**(i+1)+2*a].get_center())
-        scene.play(AnimationGroup(*[MoveToTarget(dot) for dot in level_dots]), run_time=2*(i+1))
+        scene.play(AnimationGroup(*[MoveAlongPath(dot, dot.L) for dot in level_dots]), run_time=2)
         level_initial_dots.append(level_dots)
-    for h in range(height, -1, -1):
+    scene.wait()
+    traced_paths = [m for m in scene.mobjects if isinstance(m, TracedPath)]
+    scene.play(*[FadeOut(tp) for tp in traced_paths])
+    scene.remove(*[tp for tp in traced_paths])
+
+    for h in range(height+1, 0, -1):
         level_dots = level_initial_dots[h]
         for dot in level_dots:
-            dot.generate_target()
-            dot.target.move_to(dot.original_pos)
-        scene.play(AnimationGroup(*[MoveToTarget(dot) for dot in level_dots]), run_time=2*(i+1))
-        scene.play(AnimationGroup(*[FadeOut(dot) for dot in level_dots]), run_time=2*(i+1))
-    return
+            add_tracer(scene, dot)
+        scene.play(AnimationGroup(*[MoveAlongPath(dot, dot.L, rate_func=lambda t:1-t) for dot in level_dots]), run_time=2)
+        scene.play(AnimationGroup(*[FadeOut(dot) for dot in level_dots]))
+    scene.play(initial_dot.animate.move_to(BTree.entry_dot))
+    scene.play(FadeOut(initial_dot))
+    traced_paths = [m for m in scene.mobjects if isinstance(m, TracedPath)]
+    scene.play(*[FadeOut(tp) for tp in traced_paths])
+    scene.remove(*[tp for tp in traced_paths])
+
+def create_branching_dot(scene, parent_dot, path_segments, tracer_color=YELLOW):
+        dot = Dot()
+        dot.move_to(parent_dot.get_center())
+        dot.original_pos = dot.get_center()
+        dot.L = VMobject()
+        dot.L.set_points_as_corners([path_segments[0].get_start(), path_segments[0].get_end(), path_segments[1].get_end()])
+        print(f"first: {path_segments[0].get_start()}")
+        add_tracer(scene, dot, tracer_color)
+        return dot
+    
+def add_tracer(scene, dot, tracer_color=YELLOW):
+    dot.tracer = TracedPath(dot.get_center, stroke_color=tracer_color, stroke_width=4)
+    scene.add(dot.tracer)

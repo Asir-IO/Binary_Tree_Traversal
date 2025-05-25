@@ -364,6 +364,11 @@ class BinaryTree(VGroup):
             tag.outline.stroke_width *= scale_factor
             tag.outline.radius *= scale_factor
             tag.label.font_size *= (scale_factor*2)
+        for L in self.Ls:
+            for segment in L:
+                segment.start = segment.start * scale_factor
+                segment.end = segment.end * scale_factor
+        self.entry_dot
         self.scale(scale_factor)
     def reverse_tags_order(self):
         self.remove(self.tags)
@@ -381,7 +386,6 @@ class BinaryTree(VGroup):
         for group in res:
             self.level_ordered_tags.add(*group)
         return self.level_ordered_tags
-
     
     def level_order_rec(self, node, level, res):
         if node is None:

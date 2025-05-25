@@ -80,7 +80,4 @@ class Scene01_Intro(Scene):
 class Scene02_ShowBTree_1(Scene):
     def construct(self):
         self.add(NumberPlane())
-        BTree = BinaryTree(root=buildTree(dots_color, 7))
-        BTree.build_structure(BTree.root)
-        BTree.display(self)
-        naive_traversal_BTree(self, BTree)
+        naive_tarversal_scene(self)
