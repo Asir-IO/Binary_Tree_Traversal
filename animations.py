@@ -157,91 +157,35 @@ def indicate_steps(self, structure):
             self.play(Indicate(tag))
 
 def naive_traversal_BTree(scene, BTree):
-    # create a dots_all_levels VGroup
-    # Create a level 0 dots group
-    # add a dot to it
-    # start at entry_point, move to the first tag
-    # Create a level 1 dots group
-    # add l dot and r dot to it
-    # move l to left tag and r to right tag 
-    # create a level 2 dots group
-    # for each tag visited in the previous step, add l and r dots
-    # move each dot to its respective tag
-    # do this until reaching tags with a null label, then start going back (back tracking) and bring the dot back to the entry_dot 
-    dots_all_levels = []
-    level_0 = VGroup()
-    dot_0 = Dot(color=YELLOW, radius=0.1).move_to(BTree.entry_dot.get_center())
-    level_0.add(dot_0)
-    scene.add(dot_0)
-    scene.wait()
+    level_ordered_tags = BTree.get_level_ordered_tags()
+    initial_dot = Dot()
+    initial_dot.move_to(BTree.level_ordered_tags[0])
+    level_initial_dots =VGroup(initial_dot)
+    height = BTree.root.get_height()
 
-    # Utility to check if a tag is a leaf (null node)
-    def is_leaf(tag):
-        return tag.number is None
-
-    # Track visited tags
-    visited = set()
-
-    # Level-wise traversal
-    current_level = [BTree.entry_dot]
-    next_level = []
-    level = 0
-    while current_level:
+    for i in range(height):
         level_dots = VGroup()
-        animations = []
-        for i, dot in enumerate(current_level):
-            if level == 0:
-                tag_index = 0
-            else:
-                tag_index = i * 2 + 1  # Assuming binary tree stored with 2*i + 1, 2*i + 2 children
-            if tag_index >= len(BTree.tags):
-                continue
-
-            left_tag = BTree.tags[tag_index]
-            right_index = tag_index + 1
-            right_tag = BTree.tags[right_index] if right_index < len(BTree.tags) else None
-
-            # Left Dot
-            if not is_leaf(left_tag):
-                l_dot = Dot(color=BLUE, radius=0.1).move_to(dot.get_center())
-                scene.add(l_dot)
-                l_dot.generate_target()
-                l_dot.target.move_to(left_tag.get_center())
-                animations.append(MoveToTarget(l_dot))
-                level_dots.add(l_dot)
-                next_level.append(l_dot)
-            
-            # Right Dot
-            if right_tag and not is_leaf(right_tag):
-                r_dot = Dot(color=GREEN, radius=0.1).move_to(dot.get_center())
-                scene.add(r_dot)
-                r_dot.generate_target()
-                r_dot.target.move_to(right_tag.get_center())
-                animations.append(MoveToTarget(r_dot))
-                level_dots.add(r_dot)
-                next_level.append(r_dot)
-        
-        if animations:
-            scene.play(AnimationGroup(*animations, lag_ratio=0.2))
-        
-        dots_all_levels.append(level_dots)
-        current_level = next_level
-        next_level = []
-        level += 1
-        scene.wait()
-
-    # Backtrack all dots to entry
-    for level_dots in reversed(dots_all_levels):
-        back_anis = []
+        for a, dot in enumerate(level_initial_dots):
+            left_dot = Dot()
+            left_dot.move_to(dot.get_center())
+            left_dot.original_pos = left_dot.get_center()
+            level_dots.add(left_dot)
+            left_dot.generate_target()
+            left_dot.target.move_to(level_ordered_tags[2**(i+1)+2*a-1].get_center())
+            right_dot = Dot()
+            right_dot.move_to(dot.get_center())
+            right_dot.original_pos = right_dot.get_center()
+            level_dots.add(right_dot)
+            right_dot.generate_target()
+            right_dot.target.move_to(level_ordered_tags[2**(i+1)+2*a].get_center())
+        scene.play(AnimationGroup(*[MoveToTarget(dot) for dot in level_dots]), run_time=2*(i+1))
+        level_initial_dots.add(level_dots)
+        scene.wait(2)
+    for h in range(height, 0, -1):
+        level_dots = level_initial_dots[h]
         for dot in level_dots:
             dot.generate_target()
-            dot.target.move_to(BTree.entry_dot.get_center())
-            back_anis.append(MoveToTarget(dot))
-        if back_anis:
-            scene.play(AnimationGroup(*back_anis, lag_ratio=0.2))
-        scene.wait()
-
-    # Fade out everything
-    all_dots = VGroup(*[dot for level in dots_all_levels for dot in level])
-    scene.play(FadeOut(all_dots))
-
+            dot.target.move_to(dot.original_position)
+        scene.play(AnimationGroup(*[MoveToTarget(dot) for dot in level_dots]), run_time=2*(i+1))
+        scene.wait(2)
+    return

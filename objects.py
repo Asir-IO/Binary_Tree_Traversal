@@ -10,6 +10,14 @@ class Node:
         self.parent = None
         self.color = color
         self.val = key
+    def get_height(self):
+        if self is None:
+            return -1  # or 0 depending on your convention
+
+        left_height = self.left.get_height() if self.left else -1
+        right_height = self.right.get_height() if self.right else -1
+
+        return 1 + max(left_height, right_height)
 
 # Insert node into BST
 def insert(root, key, color):
@@ -56,6 +64,7 @@ def buildTree(dots_color=None, num_nodes=3):
         insert(r, val, color_for_level(level))
     return r
 
+
 class LinearNode:
     def __init__(self, key, color=WHITE):
         self.next = None
@@ -72,9 +81,6 @@ def insert_LS(head, key, color):
         current = current.next
     current.next = new_node
     return head
-
-
-
 
 class NumberTag(VGroup):
     def __init__(self, number: int, fill_color=BLUE, radius=0.5, num_to_circle_ratio=130,**kwargs):
@@ -324,6 +330,7 @@ class BinaryTree(VGroup):
             self.Ls.add(L)
         tag = self.add_number_tag(node.val, node.color)
         self.tags.add(tag)
+        node.tag=tag
         print("to double tags: (pre)", tag.label.get_text())
         self.Double_tags.add(tag)
 
@@ -376,6 +383,25 @@ class BinaryTree(VGroup):
         scene.play(Create(VGroup(self.entry_dot, self.entry_line, self.Ls), run_time=6))
         scene.play(Create(self.remove(*VGroup(self.entry_dot, self.entry_line, self.Ls))), run_time=7)
         self.reverse_tags_order()
+
+    def get_level_ordered_tags(self):
+        res = self.level_order_rec(self.root, 0, [])
+        self.level_ordered_tags = VGroup()
+        print("res:", res)
+        for group in res:
+            self.level_ordered_tags.add(*group)
+        return res
+
+    
+    def level_order_rec(self, node, level, res):
+        if node is None:
+            return
+        if len(res) == level:
+            res.append([])
+        res[level].append(node.tag)
+        self.level_order_rec(node.left, level + 1, res)
+        self.level_order_rec(node.right, level + 1, res)
+        return res
 
 class NodeCode(VGroup):
     def __init__(self, node,**kwargs):
