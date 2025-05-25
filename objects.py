@@ -308,16 +308,8 @@ class BinaryTree(VGroup):
 
     def build_structure(self, node, child_side=None, level=0):
         if node is None:
-            #Special case -> you connect to your parent
-            if child_side == "left":
-                L = self.draw_L([self.x + self.x_distance/2, self.y + self.y_distance, 0], [self.x, self.y, 0], False, color=self.lines_color[2], x_first=True)
-                self.Ls.add(L)
-            elif child_side == "right":
-                L = self.draw_L([self.x - self.x_distance/2, self.y + self.y_distance, 0], [self.x, self.y, 0], False, color=self.lines_color[1], x_first=True)
-                self.Ls.add(L)
             tag = self.add_number_tag(None, self.dots_color[-1])
             self.tags.add(tag)
-            print("to double tags: (null)", tag)
             self.Double_tags.add(tag)
             return
         # Pre-order
@@ -325,13 +317,12 @@ class BinaryTree(VGroup):
         original_x, original_y = self.x, self.y
 
         # Connect to your left child
-        if node.left:
-            L = self.draw_L([self.x, self.y, 0], [self.x - offset, self.y - self.y_distance, 0], False, color=self.lines_color[2])
-            self.Ls.add(L)
+        L = self.draw_L([self.x, self.y, 0], [self.x - offset, self.y - self.y_distance, 0], False, color=self.lines_color[2])
+        self.Ls.add(L)
+        node.left_L = L
         tag = self.add_number_tag(node.val, node.color)
         self.tags.add(tag)
         node.tag=tag
-        print("to double tags: (pre)", tag.label.get_text())
         self.Double_tags.add(tag)
 
         self.x -= offset
@@ -341,22 +332,22 @@ class BinaryTree(VGroup):
         # Inorder
         offset = self.x_distance / (2 ** level)
         self.x, self.y = original_x, original_y
-        print("to double tags: (in)", tag.label.get_text())
         tag = self.add_number_tag(node.val, node.color)
         self.Double_tags.add(tag)
 
         # Connect to your right child
-        if node.right:
-            L = self.draw_L([self.x, self.y, 0], [self.x + offset, self.y - self.y_distance, 0], False, color=self.lines_color[1])
-            self.Ls.add(L)
+        L = self.draw_L([self.x, self.y, 0], [self.x + offset, self.y - self.y_distance, 0], False, color=self.lines_color[1])
+        self.Ls.add(L)
+        node.right_L=L
+
         self.x += offset
         self.y -= self.y_distance
         self.build_structure(node.right, "right", level + 1)
         # Postorder
         self.x, self.y = original_x, original_y
-        print("to double tags: (post)", tag.label.get_text())
         tag = self.add_number_tag(node.val, node.color)
         self.Double_tags.add(tag)
+
     def add_double_tags(self):
         # Add return tags to the object (you never added the double tags to the object before)
         return_tags = VGroup()
@@ -387,10 +378,9 @@ class BinaryTree(VGroup):
     def get_level_ordered_tags(self):
         res = self.level_order_rec(self.root, 0, [])
         self.level_ordered_tags = VGroup()
-        print("res:", res)
         for group in res:
             self.level_ordered_tags.add(*group)
-        return res
+        return self.level_ordered_tags
 
     
     def level_order_rec(self, node, level, res):
@@ -398,7 +388,7 @@ class BinaryTree(VGroup):
             return
         if len(res) == level:
             res.append([])
-        res[level].append(node.tag)
+        res[level].append(VGroup(node.tag, node.left_L, node.right_L))
         self.level_order_rec(node.left, level + 1, res)
         self.level_order_rec(node.right, level + 1, res)
         return res

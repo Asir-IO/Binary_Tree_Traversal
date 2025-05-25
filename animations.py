@@ -159,14 +159,19 @@ def indicate_steps(self, structure):
 def naive_traversal_BTree(scene, BTree):
     level_ordered_tags = BTree.get_level_ordered_tags()
     initial_dot = Dot()
-    initial_dot.move_to(BTree.level_ordered_tags[0])
-    level_initial_dots =VGroup(initial_dot)
+    initial_dot.move_to(BTree.entry_dot.get_center())
+    initial_dot.original_pos = BTree.entry_dot.get_center()
+    scene.play(FadeIn(initial_dot))
+    scene.play(initial_dot.animate.move_to(level_ordered_tags[0]))
+    level_initial_dots = [VGroup(initial_dot)]
     height = BTree.root.get_height()
 
     for i in range(height):
         level_dots = VGroup()
-        for a, dot in enumerate(level_initial_dots):
-            left_dot = Dot()
+        #for every dot currently in that level
+        for a, dot in enumerate(level_initial_dots[i]):
+            scene.play(Indicate(dot), run_time=2)
+            left_dot = Dot() 
             left_dot.move_to(dot.get_center())
             left_dot.original_pos = left_dot.get_center()
             level_dots.add(left_dot)
@@ -179,13 +184,12 @@ def naive_traversal_BTree(scene, BTree):
             right_dot.generate_target()
             right_dot.target.move_to(level_ordered_tags[2**(i+1)+2*a].get_center())
         scene.play(AnimationGroup(*[MoveToTarget(dot) for dot in level_dots]), run_time=2*(i+1))
-        level_initial_dots.add(level_dots)
-        scene.wait(2)
-    for h in range(height, 0, -1):
+        level_initial_dots.append(level_dots)
+    for h in range(height, -1, -1):
         level_dots = level_initial_dots[h]
         for dot in level_dots:
             dot.generate_target()
-            dot.target.move_to(dot.original_position)
+            dot.target.move_to(dot.original_pos)
         scene.play(AnimationGroup(*[MoveToTarget(dot) for dot in level_dots]), run_time=2*(i+1))
-        scene.wait(2)
+        scene.play(AnimationGroup(*[FadeOut(dot) for dot in level_dots]), run_time=2*(i+1))
     return
