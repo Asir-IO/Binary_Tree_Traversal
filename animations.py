@@ -170,8 +170,8 @@ def indicate_steps_unit(scene, structure, tag, i, indicate_tag=True):
             scene.play(Indicate(tag))
 
 def naive_tarversal_scene(scene):
-    BTree = BinaryTree(root=buildTree([RED, ManimColor("#2f9e44"), ManimColor("#228be6"), GREY], 3))
-    BTree.build_structure(BTree.root)
+    scene.BTree = BinaryTree(root=buildTree(scene.dots_color, 3), dots_color=scene.dots_color, lines_color=scene.lines_color)
+    scene.BTree.build_structure(scene.BTree.root)
     txt1 = Tex("Binary Tree")
     txt1.move_to([-3, -2, 0])
     txt2 = Tex("Visit every node?")
@@ -180,7 +180,7 @@ def naive_tarversal_scene(scene):
     txt3.move_to([0, -2, 0])
 
     #6.1 (recording)
-    BTree.display(scene)
+    scene.BTree.display(scene)
     scene.wait()
     #7 (rec)
     scene.play(Write(txt1), run_time=2)
@@ -190,7 +190,7 @@ def naive_tarversal_scene(scene):
     scene.wait(2)
     scene.play(ReplacementTransform(VGroup(txt1, txt2), txt3), run_time = 2)
     #8.2
-    naive_traversal_BTree(scene, BTree)
+    naive_traversal_BTree(scene)
     scene.wait()
     scene.play(Unwrite(txt3), run_time=2)
     # 9 (rec)
@@ -227,7 +227,6 @@ def naive_tarversal_scene(scene):
     scene.play(Write(txt6), GrowFromEdge(txt6_HI, edge=LEFT), run_time=2)
     scene.wait(6)
     scene.txt6_GP = VGroup(txt6, txt6_HI)
-    scene.BTree = BTree
 
 def show_solution(scene):
     txt1 = Tex("The Solution:", font_size=40)
@@ -290,16 +289,18 @@ def show_solution(scene):
     scene.wait(2)
 
 
-def naive_traversal_BTree(scene, BTree):
-    level_ordered_tags = BTree.get_level_ordered_tags()
+def naive_traversal_BTree(scene):
+    for tag in scene.BTree.tags:
+        tag.z_index = 100
+    scene.wait()
+    level_ordered_tags = scene.BTree.get_level_ordered_tags()
     initial_dot = Dot()
-    initial_dot.move_to(BTree.entry_dot.get_center())
+    initial_dot.move_to(scene.BTree.entry_dot.get_center())
     initial_dot.generate_target()
     scene.play(FadeIn(initial_dot))
     scene.play(initial_dot.animate.move_to(level_ordered_tags[0][0]))
     level_initial_dots = [VGroup(initial_dot)]
-    height = BTree.root.get_height()
-    print(f"entry_pos: {initial_dot.get_center()}")
+    height = scene.BTree.root.get_height()
 
     for i in range(height+1):
         level_dots = VGroup()
@@ -308,7 +309,6 @@ def naive_traversal_BTree(scene, BTree):
             my_left_L = level_ordered_tags[2**(i)+a-1][1]
             left_dot = create_branching_dot(scene, dot, my_left_L)
             level_dots.add(left_dot)
-            print(f"left dot pos: {left_dot.get_center()}")
             # left_label = create_position_label(left_dot, font_size=12) 
             # scene.add(left_label)
             my_right_L = level_ordered_tags[2**(i)+a-1][2]
@@ -327,7 +327,7 @@ def naive_traversal_BTree(scene, BTree):
             add_tracer(scene, dot)
         scene.play(AnimationGroup(*[MoveAlongPath(dot, dot.L, rate_func=lambda t:1-t) for dot in level_dots]), run_time=2)
         scene.play(AnimationGroup(*[FadeOut(dot) for dot in level_dots]))
-    scene.play(initial_dot.animate.move_to(BTree.entry_dot))
+    scene.play(initial_dot.animate.move_to(scene.BTree.entry_dot))
     scene.play(FadeOut(initial_dot))
     traced_paths = [m for m in scene.mobjects if isinstance(m, TracedPath)]
     scene.play(*[FadeOut(tp) for tp in traced_paths])
