@@ -353,6 +353,7 @@ class BinaryTree(VGroup):
         return_tags = VGroup()
         for tag in self.Double_tags:
             if tag not in self.tags:
+                tag.set_opacity(0)
                 return_tags.add(tag)
         self.add(return_tags)
 

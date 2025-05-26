@@ -2,20 +2,19 @@ from manim import *
 from objects import *
 from processing import *
 
-def traversal_scene(self, LBTree, BTree, timeline):
+def traversal_scene(scene, LBTree, BTree, timeline):
     LBtags_seen = {}
-    Linearized_tags = VGroup()
+    Linearized_tags = VGroup() 
     Arrows = VGroup()
+    indicate_steps_pre(scene, LBTree, color=YELLOW)
     for i, (LBtag, line, Btag, tick) in enumerate(zip(LBTree.tags, LBTree.lines, BTree.Double_tags, timeline.ticks)):
         count = LBtags_seen.get(LBtag.number, 0) + 1
         LBtags_seen[LBtag.number] = count
 
         if isinstance(line, DashedLine):
             line = Line(line.get_start(), line.get_end())
-        print(f"dot: {self.trace_dot_LBTree}")
-        print(f"line: {line}")
-        LBTreeDotAni = MoveAlongPath(self.trace_dot_LBTree, line)
-        BTreeCircleAni = self.trace_circle_BTree.animate.move_to(Btag.get_center())
+        LBTreeDotAni = MoveAlongPath(scene.trace_dot_LBTree, line)
+        BTreeCircleAni = scene.trace_circle_BTree.animate.move_to(Btag.get_center())
 
         LBtag_copy = LBtag.copy()
         LBtag_copy.order = count
@@ -47,36 +46,45 @@ def traversal_scene(self, LBTree, BTree, timeline):
             indicated_lines = node_code.to_be_displayed("base")
 
         # FadeIn the code_block
-        self.play(FadeIn(node_code))
-        self.wait()
-        
+        scene.play(FadeIn(node_code))
+        scene.wait()
+
         arrow = Arrow(start=tick.get_bottom() + DOWN*1, end= tick.get_bottom() + DOWN*0.2, color = indication_color, stroke_width=12, buff=0, max_stroke_width_to_length_ratio=10)
         Arrows.add(arrow)
         arrow.order = count
 
-        LBtag.z_index = max(self.trace_dot_LBTree.z_index, LBtag_copy.z_index) + 1
-        LBTree.entry_dot.z_index = self.trace_dot_LBTree.z_index + 1
+        LBtag.z_index = max(scene.trace_dot_LBTree.z_index, LBtag_copy.z_index) + 1
+        LBTree.entry_dot.z_index = scene.trace_dot_LBTree.z_index + 1
         # Move circle and dot, and then indicate tag, and then linearize tag, and then add arrow
         temp_copy = LBtag.outline.copy()
         temp_copy.z_index=LBtag.z_index+1
         temp_copy.set_fill(opacity=0)
-        
-        self.play(Succession(AnimationGroup(BTreeCircleAni, LBTreeDotAni, lag_ratio=0, run_time=2), temp_copy.animate.set_stroke(color=YELLOW)))
-        self.wait()
-        self.play(Succession(AnimationGroup(Indicate(LBtag, color=indication_color), Succession(Indicate(indicated_lines[0], color=indication_color), indicated_lines[0].animate.set_color(indication_color)))))
-        self.wait()
-        self.play(LBTreeTagAni)
-        self.wait()
-        self.play(GrowArrow(arrow))
-        self.wait(2)
-        self.play(Succession(Indicate(indicated_lines[1], color=indication_color), indicated_lines[1].animate.set_color(indication_color)))
-        self.wait()
-        self.play(FadeOut(node_code), FadeOut(temp_copy))
-        self.wait()
-    self.play(FadeOut(self.trace_circle_BTree, self.trace_dot_LBTree))
+
+        if i==0:
+            scene.play(Create(scene.trace_circle_BTree))
+        scene.play(Succession(AnimationGroup(BTreeCircleAni, LBTreeDotAni, lag_ratio=0, run_time=2), temp_copy.animate.set_stroke(color=YELLOW)))
+        indicate_steps_unit(scene, LBTree, LBtag, i, False)
+        scene.wait()
+        scene.play(Succession(AnimationGroup(Indicate(LBtag, color=indication_color), Succession(Indicate(indicated_lines[0], color=indication_color), indicated_lines[0].animate.set_color(indication_color)))))
+        scene.wait()
+        scene.play(LBTreeTagAni)
+        scene.wait()
+        scene.play(GrowArrow(arrow))
+        scene.wait(2)
+        scene.play(Succession(Indicate(indicated_lines[1], color=indication_color), indicated_lines[1].animate.set_color(indication_color)))
+        scene.wait()
+        scene.play(FadeOut(node_code), FadeOut(temp_copy))
+        scene.wait()
+        scene.i=i
+    line = Line(LBTree.exit_line.get_start(), LBTree.exit_line.get_end())
+    LBTreeDotAni = MoveAlongPath(scene.trace_dot_LBTree, line)
+    BTreeCircleAni = scene.trace_circle_BTree.animate.move_to(BTree.entry_dot.get_center())
+    scene.play(AnimationGroup(BTreeCircleAni, LBTreeDotAni, lag_ratio=0, run_time=2))
+    indicate_steps_unit(scene, LBTree, LBTree.exit_dot, scene.i, False)
+    scene.play(FadeOut(scene.trace_circle_BTree, scene.trace_dot_LBTree))
     return VGroup(Linearized_tags, Arrows)
 
-def show_order_sub_scene(self, Linearized_tags, Arrows, timeline, type):
+def show_order_sub_scene(scene, Linearized_tags, Arrows, timeline, type):
     #Show preorder
     ommited_objs = VGroup()
     chosen_objs = VGroup()
@@ -99,65 +107,67 @@ def show_order_sub_scene(self, Linearized_tags, Arrows, timeline, type):
     align_center(order_text, timeline, 'x')
 
     for tag, arrow in zip(Linearized_tags, Arrows):
-        # Ommit others
-        if tag.order != order_match or arrow.order != order_match or tag.number is None:
-            ommited_objs.add(tag, arrow)
-        else:
+        if type == "preorder" and tag.number is None:
             chosen_objs.add(tag, arrow)
-    self.play(FadeOut(ommited_objs), run_time=1)
-    self.wait()
-    self.play(Indicate(chosen_objs, color=BLUE_C), FadeIn(order_text), run_time=2)
-    self.wait()
-    self.play(FadeOut(order_text))
-    self.wait()
-    self.play(FadeIn(ommited_objs), run_time=1)
-    self.wait()
+        elif tag.number is not None and tag.order == order_match and arrow.order == order_match:
+            chosen_objs.add(tag, arrow)
+        else:
+            ommited_objs.add(tag, arrow)
+    scene.play(FadeOut(ommited_objs), run_time=1)
+    scene.wait()
+    scene.play(Indicate(chosen_objs, color=indication_color), FadeIn(order_text), run_time=2)
+    scene.wait()
+    scene.play(FadeOut(order_text))
+    scene.wait()
+    scene.play(FadeIn(ommited_objs), run_time=1)
+    scene.wait()
     
 
-def show_order_scene(self, Linearized_tags, Arrows, timeline):
+def show_order_scene(scene, Linearized_tags, Arrows, timeline):
     #Show preorder
-    show_order_sub_scene(self, Linearized_tags, Arrows, timeline, "preorder")
+    show_order_sub_scene(scene, Linearized_tags, Arrows, timeline, "preorder")
     #Show inorder
-    show_order_sub_scene(self, Linearized_tags, Arrows, timeline, "inorder")
+    show_order_sub_scene(scene, Linearized_tags, Arrows, timeline, "inorder")
     #Show postorder
-    show_order_sub_scene(self, Linearized_tags, Arrows, timeline, "postorder")
+    show_order_sub_scene(scene, Linearized_tags, Arrows, timeline, "postorder")
 
 # Scene01_Intro
-def indicate_steps(self, structure):
+def indicate_steps_pre(scene, structure, color=YELLOW):
+    #Add initial frame
     tag_radius = structure.tags[0].outline.radius
-    frame = StepFrame(width=tag_radius*2 + (0.1*tag_radius/0.32), height=structure.height+1)
+    scene.frame = StepFrame(width=tag_radius*2 + (0.1*tag_radius/0.32), height=structure.height+1, color=color)
     print(f"radius: {structure.tags[0].outline.radius}")
-    frame.move_to(structure.tags[0].get_center())
-    frame.align_to(structure, DOWN)
-    frame.shift(DOWN*0.5)
-    self.play(FadeIn(frame))
-    self.wait(0.5)
-    self.play(Indicate(structure.tags[0]))
-    self.wait()
-    for i, tag in enumerate(structure.tags[1:].add(structure.exit_dot)):
-        step = frame.text_group.copy()
-        print("i:", i)
-        if(tag == structure.exit_dot):
-            new_txt = Tex(f"{i+1}", font_size=frame.txt2.font_size).move_to(frame.text_group[1])
-            self.play(ReplacementTransform(frame.text_group[1], new_txt))
-            frame.text_group[1] = new_txt
-            final_txt = frame.text_group.copy()
-            self.play(Unwrite(frame.text_group))
+    scene.frame.move_to(structure.tags[0].get_center())
+    scene.frame.align_to(structure, DOWN)
+    scene.frame.shift(DOWN*0.5)
+    scene.play(FadeIn(scene.frame))
+    scene.wait(0.5)
 
-            self.play(frame.animate.match_x(tag))
-            new_number = Tex(f"{i+2}", font_size=frame.txt2.font_size).move_to(final_txt[1])
-            final_txt[1].become(new_number)  
+def indicate_steps_unit(scene, structure, tag, i, indicate_tag=True):
+    step = scene.frame.text_group.copy()
+    print("i:", i)
+    if(tag == structure.exit_dot):
+        new_txt = Tex(f"{i+1}", font_size=scene.frame.txt2.font_size).move_to(scene.frame.text_group[1])
+        scene.play(ReplacementTransform(scene.frame.text_group[1], new_txt))
+        scene.frame.text_group[1] = new_txt
+        final_txt = scene.frame.text_group.copy()
+        scene.play(Unwrite(scene.frame.text_group))
 
-            final_txt.move_to(frame.rec.get_top() + DOWN * (final_txt.height + 0.025))
-            self.play(Write(final_txt))
-            self.wait()
-            self.play(FadeOut(frame, final_txt))
-        else:
-            step[1] = Tex(f"{i+1}", font_size=frame.txt2.font_size).move_to(frame.text_group[1].get_center())
-            self.play(ReplacementTransform(frame.text_group, step))     
-            frame.text_group = step
-            self.play(AnimationGroup(frame.animate.match_x(tag)))
-            self.play(Indicate(tag))
+        scene.play(scene.frame.animate.match_x(tag))
+        new_number = Tex(f"{i+2}", font_size=scene.frame.txt2.font_size).move_to(final_txt[1])
+        final_txt[1].become(new_number)  
+
+        final_txt.move_to(scene.frame.rec.get_top() + DOWN * (final_txt.height + 0.025))
+        scene.play(Write(final_txt))
+        scene.wait()
+        scene.play(FadeOut(scene.frame, final_txt))
+    else:
+        step[1] = Tex(f"{i+1}", font_size=scene.frame.txt2.font_size).move_to(scene.frame.text_group[1].get_center())
+        scene.play(ReplacementTransform(scene.frame.text_group, step))     
+        scene.frame.text_group = step
+        scene.play(AnimationGroup(scene.frame.animate.match_x(tag)))
+        if indicate_tag:
+            scene.play(Indicate(tag))
 
 def naive_tarversal_scene(scene):
     BTree = BinaryTree(root=buildTree([RED, ManimColor("#2f9e44"), ManimColor("#228be6"), GREY], 3))

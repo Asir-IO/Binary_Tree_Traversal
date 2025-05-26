@@ -6,27 +6,33 @@ def align_center(aligned, other, component):
     elif component == 'y':
         aligned.move_to([aligned.get_center()[0], other.get_center()[1], 0])
 
-def spread_in_grid(vgroup: VGroup, rows: int = 8, cols: int = 14, padding: float = 0.1):
-        total = len(vgroup)
-        max_items = rows * cols
+def spread_in_grid(vgroup: VGroup, rows: int = 8, cols: int = 14, y_shift=0, padding: float = 0.1):
+    total = len(vgroup)
+    frame_width = config.frame_width
+    frame_height = config.frame_height
+    cell_width = frame_width / cols
+    cell_height = frame_height / rows
 
-        if total > max_items:
-            print(f"Warning: VGroup has more items ({total}) than grid cells ({max_items}). Some will be skipped.")
-        
-        # Calculate cell dimensions
-        frame_width = config.frame_width
-        frame_height = config.frame_height
-        cell_width = frame_width / cols
-        cell_height = frame_height / rows
+    max_items = rows * cols  # This needs to be handled dynamically now
+    grid = [[None for _ in range(cols)] for _ in range(rows)]
 
-        for i, mob in enumerate(vgroup[:max_items]):
-            row = i // cols
-            col = i % cols
+    i = 0  # index into vgroup
+    for row in range(rows):
+        col = 0
+        while col < cols and i < total:
+            mob = vgroup[i]
+            if mob.width > cell_width and col + 1 < cols:
+                # Occupies 2 cells
+                x = -frame_width / 2 + (col + 1) * cell_width
+                col += 2  # skip one more cell
+            else:
+                x = -frame_width / 2 + (col + 0.5) * cell_width
+                col += 1
 
-            x = -frame_width / 2 + (col + 0.5) * cell_width
-            y = frame_height / 2 - (row + 0.5) * cell_height
-
+            y = (frame_height / 2 - (row + 0.5) * cell_height) - y_shift
             mob.move_to([x, y, 0])
+            i += 1
+
 
 def move_by_anchor(obj, target, anchor):
     if (anchor == "left"):
