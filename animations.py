@@ -10,8 +10,10 @@ def traversal_scene(self, LBTree, BTree, timeline):
         count = LBtags_seen.get(LBtag.number, 0) + 1
         LBtags_seen[LBtag.number] = count
 
-        if not isinstance(line, DashedLine):
+        if isinstance(line, DashedLine):
             line = Line(line.get_start(), line.get_end())
+        print(f"dot: {self.trace_dot_LBTree}")
+        print(f"line: {line}")
         LBTreeDotAni = MoveAlongPath(self.trace_dot_LBTree, line)
         BTreeCircleAni = self.trace_circle_BTree.animate.move_to(Btag.get_center())
 
@@ -58,6 +60,7 @@ def traversal_scene(self, LBTree, BTree, timeline):
         temp_copy = LBtag.outline.copy()
         temp_copy.z_index=LBtag.z_index+1
         temp_copy.set_fill(opacity=0)
+        
         self.play(Succession(AnimationGroup(BTreeCircleAni, LBTreeDotAni, lag_ratio=0, run_time=2), temp_copy.animate.set_stroke(color=YELLOW)))
         self.wait()
         self.play(Succession(AnimationGroup(Indicate(LBtag, color=indication_color), Succession(Indicate(indicated_lines[0], color=indication_color), indicated_lines[0].animate.set_color(indication_color)))))
@@ -166,40 +169,116 @@ def naive_tarversal_scene(scene):
     txt3 = Tex("Simple enough!", font_size=80)
     txt3.move_to([0, -2, 0])
 
+    #6.1 (recording)
     BTree.display(scene)
     scene.wait()
+    #7 (rec)
     scene.play(Write(txt1), run_time=2)
-    scene.wait(2)
+    scene.wait(3)
+    #7.1 (rec)
     scene.play(Write(txt2), run_time=2)
     scene.wait(2)
     scene.play(ReplacementTransform(VGroup(txt1, txt2), txt3), run_time = 2)
+    #8.2
     naive_traversal_BTree(scene, BTree)
     scene.wait()
     scene.play(Unwrite(txt3), run_time=2)
-    scene.wait()
-
-    txt4 = Tex("Cloning yourself")
+    # 9 (rec)
+    scene.wait(4)
+    txt4 = Tex("Clone yourself?")
     txt4.move_to([-3, -2, 0])
-    txt4_HI = add_highlight_to_text(txt4, 0, 14, color=RED_D, opacity=0.8, text_z_index=txt4.z_index)
-    txt5 = Tex("Splitting your conciousness")
+    txt5 = Tex("Split your conciousness?")
     txt5.move_to([3, -2, 0])
-    txt5_HI = add_highlight_to_text(txt5, 0, 24, color=RED_D, opacity=0.8, text_z_index=txt5.z_index)
     scene.play(Write(txt4), run_time=2)
     scene.wait()
     scene.play(Write(txt5), run_time=2)
+    scene.wait(3)
+    
+    #10.2 (rec)
+    txt7 = Tex("Splitting")
+    txt7.move_to([-3, -2, 0])
+    txt7_HI = add_highlight_to_text(txt7, 0, 14, color=RED_D, opacity=0.8, text_z_index=txt7.z_index)
+    txt8 = Tex("Parallel moves")
+    txt8.move_to([3, -2, 0])
+    txt8_HI = add_highlight_to_text(txt8, 0, 24, color=RED_D, opacity=0.8, text_z_index=txt8.z_index)
+    scene.play(ReplacementTransform(txt4, txt7), run_time=2)
     scene.wait()
-    scene.play(GrowFromEdge(txt4_HI, edge=LEFT),GrowFromEdge(txt5_HI, edge=LEFT),run_time=2)
+    scene.play(ReplacementTransform(txt5, txt8), run_time=2)
     scene.wait()
-    scene.play(FadeOut(VGroup(txt4, txt4_HI, txt5, txt5_HI)), run_time=2)
+    scene.play(GrowFromEdge(txt7_HI, edge=LEFT),GrowFromEdge(txt8_HI, edge=LEFT),run_time=2)
+    scene.wait()
+    scene.play(FadeOut(VGroup(txt7, txt7_HI, txt8, txt8_HI)), run_time=2)
     scene.wait(2)
     
+    #11.6 (rec)
     txt6 = Tex("Sequential way?", font_size=80)
     txt6.move_to([0, -2, 0])
     txt6_HI = add_highlight_to_text(txt6, 0, 9, color=GREEN_D, opacity=0.8, text_z_index=txt6.z_index)
     scene.play(Write(txt6), GrowFromEdge(txt6_HI, edge=LEFT), run_time=2)
-    scene.wait(2)
+    scene.wait(6)
+    scene.txt6_GP = VGroup(txt6, txt6_HI)
+    scene.BTree = BTree
+
 def show_solution(scene):
-    return
+    txt1 = Tex("The Solution:", font_size=40)
+    txt1_BX = SurroundingRectangle(txt1, color=GREEN_D, buff=0.2)
+    LBTree = LinearizedBTree(root=buildTree(scene.dots_color, 3), x_start=-10, x_distance=0.9, y_start=-2 ,y_distance=1.5, dots_color=scene.dots_color, lines_color=scene.lines_color)
+    LBTree.build_structure_with_entry(LBTree.root)
+    LBTree.move_to([0, 1, 0])
+    LBTree.scale_all(0.9)
+    LBTree_SUR = SurroundingRectangle(LBTree, color=GREEN_D, buff=0)
+    #buff
+    LBTree_SUR.stretch_to_fit_width(LBTree_SUR.width +1.4)
+    LBTree_SUR.stretch_to_fit_height(LBTree_SUR.height + 0.2)
+    txt1_GP = VGroup(txt1, txt1_BX).align_to(LBTree_SUR, UL)
+    trans1 = ReplacementTransform(scene.txt6_GP, VGroup(txt1_GP, LBTree_SUR), run_time=2)
+    scene.BTree.generate_target()
+    scene.BTree.target.move_to([0, -2.7, 0])
+    scene.BTree.target.scale_all(0.6)
+    
+    trans2 = MoveToTarget(scene.BTree)
+    scene.play(trans1, trans2)
+    LBTree.display(scene, wait=0.1)
+    #14.2 (rec)
+    scene.wait(7)
+    code = '''
+                def traversal(node):
+                    # Base case
+                    if node == None:
+                        return
+                    # Preorder (1st visit)
+                    visit(node)
+                    traversal(node.left)
+
+                    # Inorder (2nd visit)
+                    visit(node)
+                    traversal(node.right)
+                    
+                    # Postorder (3rd visit)
+                    visit(node)
+                    return'''
+    py_codeblock = Code(
+            code_string=code,
+            language="python",
+            background="window",
+            formatter_style="native",
+            paragraph_config={"font": "Cascadia Mono SemiBold"},
+        )
+    py_codeblock.move_to([-4,1,0])
+    py_codeblock.scale(0.6)
+    LBTree.generate_target()
+    LBTree.target.shift(3*RIGHT)
+    LBTree.target.scale_all(0.6)
+    #15.3 (rec)
+    scene.wait(5)
+    scene.play(FadeOut(VGroup(txt1_GP, LBTree_SUR)))
+    scene.play(MoveToTarget(LBTree))
+    scene.play(FadeIn(py_codeblock), run_time=2)
+    #16.2 (rec)
+    scene.wait()
+    scene.play(Circumscribe(py_codeblock), run_time=2)
+    scene.wait(2)
+
 
 def naive_traversal_BTree(scene, BTree):
     level_ordered_tags = BTree.get_level_ordered_tags()

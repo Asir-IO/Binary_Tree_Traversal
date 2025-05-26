@@ -169,9 +169,9 @@ class LinearizedBTree(VGroup):
             self.add_number_tag(None, self.dots_color[-1])
             if child_side is not None:
                 if child_side == "left":
-                    self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], False, color=self.lines_color[2])  # PURPLE
+                    self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[2])  # PURPLE
                 elif child_side == "right":
-                    self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], False, color=self.lines_color[1])  # ORANGE
+                    self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[1])  # ORANGE
             self.x += self.x_distance
             self.y -= self.y_distance
             return
@@ -196,9 +196,9 @@ class LinearizedBTree(VGroup):
         self.add_number_tag(node.val, node.color)
         if child_side is not None:
             if child_side == "left":
-                self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], False, color=self.lines_color[2])
+                self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[2])
             elif child_side == "right":
-                self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], False, color=self.lines_color[1])
+                self.draw_line([self.x, self.y, 0], [self.x + self.x_distance, self.y - self.y_distance, 0], True, color=self.lines_color[1])
         self.x += self.x_distance
         self.y -= self.y_distance
     def build_structure_with_entry(self, root):
@@ -208,33 +208,33 @@ class LinearizedBTree(VGroup):
         self.x += self.x_distance
         self.y += self.y_distance
         self.build_structure(root)
-        self.exit_line = self.draw_line([self.x - self.x_distance, self.y + self.y_distance, 0], [self.x, self.y, 0], False, color=self.lines_color[0])
+        self.exit_line = self.draw_line([self.x - self.x_distance, self.y + self.y_distance, 0], [self.x, self.y, 0], True, color=self.lines_color[0])
         self.exit_dot = Dot(color=self.dots_color[0], radius=0.25).move_to([self.x, self.y, 0])
         self.add(self.exit_dot)
-    def display(self, scene):
+    def display(self, scene, wait):
         # Animate the first dot and line
         self.entry_line.z_index = 0
         self.entry_dot.z_index = 3
         scene.play(FadeIn(self.entry_dot), run_time=1)
         scene.play(Create(self.entry_line), run_time=1)
         scene.bring_to_front(self.entry_dot)
-        scene.wait(0.5)
+        scene.wait(wait)
 
         # Animate tags and lines for the rest
         for i, (ln, tg) in enumerate(zip(self.lines[1:], self.tags)):
             ln.z_index = 0
             tg.z_index = 3
             scene.play(FadeIn(tg), run_time=1)
-            scene.wait(0.1)
+            scene.wait(wait/5)
             scene.play(Create(ln), run_time=1)
             scene.bring_to_front(tg)
-            scene.wait(0.5)
+            scene.wait(wait)
 
         # Animate the final dot
         self.exit_dot.z_index = 3
         scene.play(FadeIn(self.exit_dot), run_time=1)
         scene.bring_to_front(self.exit_dot)
-        scene.wait(0.5)
+        scene.wait(wait)
 
     def scale_all(self, scale_factor):
         for tag in self.tags:
@@ -376,9 +376,12 @@ class BinaryTree(VGroup):
         self.add(self.tags)
     def display(self, scene):
         self.reverse_tags_order()
-        scene.play(Create(VGroup(self.entry_dot, self.entry_line, self.Ls), run_time=6))
-        scene.play(Create(self.remove(*VGroup(self.entry_dot, self.entry_line, self.Ls))), run_time=7)
+        filtered = VGroup(self.entry_dot, self.entry_line, self.Ls)
+        rest = VGroup(*[obj for obj in self if obj not in filtered])
+        scene.play(Create(filtered, run_time=6))
+        scene.play(Create(rest), run_time=7)
         self.reverse_tags_order()
+
 
     def get_level_ordered_tags(self):
         res = self.level_order_rec(self.root, 0, [])
