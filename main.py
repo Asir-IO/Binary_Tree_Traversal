@@ -158,21 +158,15 @@ class Scene04_Conclusion(Scene):
         txt1_SUR.stretch_to_fit_height(txt1.height+0.3)
         txt1_SUR.stretch_to_fit_width(txt1.width+0.6)
         txt1_SUR.set_stroke(width=5)
-        txt1_GP = VGroup(txt1_SUR, txt1).move_to([0,3,0])
+        txt1_GP = VGroup(txt1_SUR, txt1).move_to([0,2.5,0])
         self.play(Create(txt1_SUR), Write(txt1), run_time=2)
 
-        LBTree = LinearizedBTree(root=buildTree(dots_color, 3), x_start=-10, x_distance=0.9, y_start=-2 ,y_distance=1.5, dots_color=dots_color, lines_color=lines_color)
-        LBTree.build_structure_with_entry(LBTree.root)
-        LBTree.scale_all(0.5)
-        LBTree.next_to(txt1_GP, DOWN, buff=0.7)
-
-        txt2 = Tex("Generalize this diagram for an n-ary", font_size=54)
-        txt3 = Tex("tree data structure?", font_size=54)
+        txt2 = Tex("Create a traversal diagram for an n-ary", font_size=60)
+        txt3 = Tex("tree data structure?", font_size=60)
         txt2_3 = VGroup(txt2, txt3).arrange(direction=DOWN)
-        txt2_HI = add_highlight_to_text(txt2, 26, 30, color=GREEN_D, opacity=0.8)
-        txt2_3_GP = VGroup(txt2_3, txt2_HI).next_to(LBTree, DOWN, buff=0.7)
+        txt2_HI = add_highlight_to_text(txt2, 28, 32, color=GREEN_D, opacity=0.8)
+        txt2_3_GP = VGroup(txt2_3, txt2_HI).next_to(txt1_GP, DOWN, buff=1.5)
         self.wait(2)
-        self.play(FadeIn(LBTree))
         self.play(
             Succession(
             Write(txt2),
@@ -184,7 +178,7 @@ class Scene04_Conclusion(Scene):
 
 class Scene05_SoFar(MovingCameraScene):
     def construct(self):
-        self.add(NumberPlane())
+        # self.add(NumberPlane())
         head = LinearNode(1, dots_color[1])
         head = insert_LS(head, 2, dots_color[2])
         head = insert_LS(head, 3, dots_color[3])
@@ -209,6 +203,13 @@ class Scene05_SoFar(MovingCameraScene):
         self.play(ReplacementTransform(Chain1, LChain), run_time=2)
         self.wait()
 
+        txt_10 = Tex(r"``Traversal diagram''", font_size = 80)
+        txt_10.next_to(LChain, DOWN, buff=0.7)
+        self.play(Write(txt_10), run_time=2)
+        self.play(Wiggle(LChain), run_time=2)
+        self.wait()
+        self.play(Unwrite(txt_10))
+        self.wait()
         arr_2.next_to(LChain, DOWN, buff=0.2)
         timeline_list = NumberLine(
             x_range=[0, 6, 1],
@@ -238,10 +239,10 @@ class Scene05_SoFar(MovingCameraScene):
         self.wait(3)
 
         self.play(self.camera.frame.animate.shift(RIGHT * 3), run_time=2)
-        txt_suc1 = Tex("Linearized", font_size=80).move_to([7.222-1.5, 2, 0])
+        txt_suc1 = Tex("Traversed", font_size=80).move_to([7.222-1.5, 2, 0])
         txt_suc2 = Tex("Sucessfully", font_size=70).next_to(txt_suc1, DR, buff=0.2)  
         txt_suc2.shift(LEFT*txt_suc1.get_width()/2)
-        txt_suc2_HI = add_highlight_to_text(txt_suc2, 0, 8, color=GREEN_D, opacity=0.8)
+        txt_suc2_HI = add_highlight_to_text(txt_suc2, 0, 10, color=GREEN_D, opacity=0.8)
 
         self.play(
             Write(txt_suc1),
@@ -275,7 +276,13 @@ class Scene05_SoFar(MovingCameraScene):
         self.play(ReplacementTransform(BTree, LBTree), run_time=2)
         arr_3.next_to(LBTree, DOWN, buff=0.2)
         self.wait()
-
+        txt_10 = Tex(r"``Traversal diagram''", font_size = 80)
+        txt_10.next_to(LBTree, DOWN, buff=0.5)
+        self.play(Write(txt_10), run_time=2)
+        self.play(Wiggle(LBTree), run_time=2)
+        self.wait()
+        self.play(Unwrite(txt_10))
+        self.wait()
         timeline_list = NumberLine(
             x_range=[0, 12, 1],
             length=LBTree.get_width(),
@@ -305,10 +312,10 @@ class Scene05_SoFar(MovingCameraScene):
 
         self.play(self.camera.frame.animate.shift(RIGHT * 1.5), run_time=2)
 
-        txt_suc1 = Tex("Linearized", font_size=70).move_to([7.222-1.5+17.22+1, 2, 0])
+        txt_suc1 = Tex("Traversed", font_size=70).move_to([7.222-1.5+17.22+1, 2, 0])
         txt_suc2 = Tex("Sucessfully", font_size=60).next_to(txt_suc1, DOWN, buff=0.2)
         txt_suc2.shift(RIGHT*0.1)
-        txt_suc2_HI = add_highlight_to_text(txt_suc2, 0, 8, color=GREEN_D, opacity=0.8)
+        txt_suc2_HI = add_highlight_to_text(txt_suc2, 0, 10, color=GREEN_D, opacity=0.8)
 
         self.play(
             Write(txt_suc1),
