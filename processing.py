@@ -39,6 +39,8 @@ def move_by_anchor(obj, target, anchor):
         anchor_pos = obj.get_left()
     if (anchor == "right"):
         anchor_pos = obj.get_right()
+    if (anchor == "top"):
+        anchor_pos = obj.get_top()
     shift = target - anchor_pos
     obj.shift(shift)
 
@@ -73,3 +75,10 @@ def add_highlight_to_text(text, initial, final, color=GREEN, opacity=0.5, text_z
     highlight.shift(RIGHT * (highlight.width * 0.0008) + DOWN * (highlight.height * 0.2))
     highlight.set_z_index(text_z_index - 1)
     return highlight
+
+def Mobject_overlapping_VGroup(target_mob, group):
+    overlapping = VGroup()
+    for mob in group:
+        if mob.get_bounding_box().intersects(target_mob.get_bounding_box()):
+            overlapping.add(mob)
+    return overlapping

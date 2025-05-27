@@ -171,7 +171,6 @@ class Scene04_Conclusion(Scene):
         txt2_3 = VGroup(txt2, txt3).arrange(direction=DOWN)
         txt2_HI = add_highlight_to_text(txt2, 26, 30, color=GREEN_D, opacity=0.8)
         txt2_3_GP = VGroup(txt2_3, txt2_HI).next_to(LBTree, DOWN, buff=0.7)
-        print(txt2[0])
         self.wait(2)
         self.play(FadeIn(LBTree))
         self.play(
@@ -181,6 +180,143 @@ class Scene04_Conclusion(Scene):
         )
         self.play(GrowFromEdge(txt2_HI, LEFT))
         self.wait(2)
+        self.play(*[FadeOut(mob) for mob in self.mobjects])
+
+class Scene05_SoFar(MovingCameraScene):
+    def construct(self):
+        self.add(NumberPlane())
+        head = LinearNode(1, dots_color[1])
+        head = insert_LS(head, 2, dots_color[2])
+        head = insert_LS(head, 3, dots_color[3])
+
+        Chain1 = Chain(head, x_distance=1.5)
+        Chain1.build_structure_with_entry(head)
+        Chain1.move_to(ORIGIN)
+
+        txt_1 = Tex("Linked List", font_size=100)
+        txt_1.move_to([0,2,0])
+        self.play(Write(txt_1), run_time=2)
+        self.play(FadeIn(Chain1), run_time=2)
+        self.play(Wiggle(Chain1, buff=0.5, run_time=2))
+        self.wait()
+
+        arr_2 = MathTex(r"\Downarrow", font_size=80)
+        LChain = LinearizedChain(head)
+        LChain.build_structure_with_entry(head)
+        LChain.scale_all(0.8)
+        move_by_anchor(LChain, [0,3.5,0], "top")
+        self.play(Unwrite(txt_1))
+        self.play(ReplacementTransform(Chain1, LChain), run_time=2)
+        self.wait()
+
+        arr_2.next_to(LChain, DOWN, buff=0.2)
+        timeline_list = NumberLine(
+            x_range=[0, 6, 1],
+            length=LChain.get_width(),
+            color=WHITE,
+            include_numbers=False,
+            stroke_width=5,
+            tick_size=0.1,
+            numbers_with_elongated_ticks=[0,6]
+        )
+        align_center(timeline_list, LChain, 'x')
+        timeline_list.next_to(arr_2, DOWN, buff=0)
+        timeline_list.shift(DOWN*0.7)
+        for tick in timeline_list.ticks:
+            tick.set_color(YELLOW)
+
+        tags_copy = LChain.tags.copy()
+        for tag, tick in zip(tags_copy, timeline_list.ticks):
+            tag.generate_target()
+            tag.target.move_to(tick.get_center())
+        self.play(Create(arr_2))
+        self.play(Create(timeline_list), run_time=2)
+        self.play(Indicate(LChain.tags))
+        self.wait()
+        self.play(*[MoveToTarget(tag) for tag in tags_copy], run_time=2)
+        self.play(Indicate(tags_copy))
+        self.wait(3)
+
+        self.play(self.camera.frame.animate.shift(RIGHT * 3), run_time=2)
+        txt_suc1 = Tex("Linearized", font_size=80).move_to([7.222-1.5, 2, 0])
+        txt_suc2 = Tex("Sucessfully", font_size=70).next_to(txt_suc1, DR, buff=0.2)  
+        txt_suc2.shift(LEFT*txt_suc1.get_width()/2)
+        txt_suc2_HI = add_highlight_to_text(txt_suc2, 0, 8, color=GREEN_D, opacity=0.8)
+
+        self.play(
+            Write(txt_suc1),
+            Write(txt_suc2),
+            run_time=2)
+        self.play(GrowFromEdge(txt_suc2_HI, LEFT))
+        self.wait()
+        self.play(Circumscribe(timeline_list, color=GREEN_D, buff=0.3, run_time=2))
+        self.play(self.camera.frame.animate.shift(RIGHT * (11.22+3)), run_time=3)
+
+        txt_2 = Tex("Binary Tree", font_size=100)
+        txt_2.move_to([0+14.22+3,2,0])
+        BTree = BinaryTree(root=buildTree(dots_color, 3), x_start=0, x_distance=3, y_start=3 ,y_distance=1, dots_color=dots_color, lines_color=lines_color)
+        BTree.build_structure(BTree.root)
+        BTree.add_double_tags()
+        BTree.next_to(txt_2, DOWN, buff=0.3)
+        txt_2.shift(UP*0.5)
+        self.play(Write(txt_2), run_time=2)
+        self.play(FadeIn(BTree), run_time=2)
+        self.play(Wiggle(BTree, buff=0.5, run_time=2))
+        self.wait()
+
+        arr_3 = MathTex(r"\Downarrow", font_size=80)
+
+        LBTree = LinearizedBTree(root=buildTree(dots_color, 3), x_start=-10, x_distance=0.9, y_start=-2 ,y_distance=1.5, dots_color=dots_color, lines_color=lines_color)
+        LBTree.build_structure_with_entry(LBTree.root)
+        LBTree.scale_all(0.8)
+        move_by_anchor(LBTree, [0+14.22+3,3.5,0], "top")
+
+        self.play(Unwrite(txt_2))
+        self.play(ReplacementTransform(BTree, LBTree), run_time=2)
+        arr_3.next_to(LBTree, DOWN, buff=0.2)
+        self.wait()
+
+        timeline_list = NumberLine(
+            x_range=[0, 12, 1],
+            length=LBTree.get_width(),
+            color=WHITE,
+            include_numbers=False,
+            stroke_width=5,
+            tick_size=0.1,
+            numbers_with_elongated_ticks=[0,12]
+        )
+        align_center(timeline_list, LBTree, 'x')
+        timeline_list.next_to(arr_3, DOWN, buff=0)
+        timeline_list.shift(DOWN*0.7)
+        for tick in timeline_list.ticks:
+            tick.set_color(YELLOW)
+        tags_copy = LBTree.tags.copy()
+        for tag, tick in zip(tags_copy, timeline_list.ticks):
+            tag.generate_target()
+            tag.target.move_to(tick.get_center())
+        self.play(Create(arr_3))
+        self.play(Create(timeline_list), run_time=2)
+        self.play(Indicate(LBTree.tags))
+        self.wait()
+        self.play(*[MoveToTarget(tag) for tag in tags_copy], run_time=2)
+        self.wait()
+        self.play(Indicate(tags_copy))
+        self.wait()
+
+        self.play(self.camera.frame.animate.shift(RIGHT * 1.5), run_time=2)
+
+        txt_suc1 = Tex("Linearized", font_size=70).move_to([7.222-1.5+17.22+1, 2, 0])
+        txt_suc2 = Tex("Sucessfully", font_size=60).next_to(txt_suc1, DOWN, buff=0.2)
+        txt_suc2.shift(RIGHT*0.1)
+        txt_suc2_HI = add_highlight_to_text(txt_suc2, 0, 8, color=GREEN_D, opacity=0.8)
+
+        self.play(
+            Write(txt_suc1),
+            Write(txt_suc2),
+            run_time=2)
+        self.play(GrowFromEdge(txt_suc2_HI, LEFT))
+        self.wait()
+        self.play(Circumscribe(timeline_list, color=GREEN_D, buff=0.3, run_time=2))
         self.play(*[FadeOut(mob) for mob in self.mobjects])
 
 
