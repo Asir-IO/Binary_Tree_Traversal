@@ -24,3 +24,5 @@ This is the repo for a Manimation that visually demonstrates how Linked lists an
 While working on this manimation, I’ve gained a much deeper understanding of how recursive functions work. I implemented several of them myself demonstrating pre-order, in-order, and post-order visits , most of which can be found in the `objects.py` or `processing.py` files. 
 
 If all goes well, I will start working on another manimation on recursion soon, _in sha' Allah_ =)
+
+Link to the YouTube video: https://youtu.be/19tjEb0-vBI?si=HsA9hGMBHGNHIqFC
